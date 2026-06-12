@@ -1,0 +1,117 @@
+<div class="cart-page">
+  <div class="page-header">
+    <h1>Shopping Cart</h1>
+    <p>{{cart.itemCount()}} items in your cart</p>
+  </div>
+
+  @if (cart.hasItems()) {
+    <div class="cart-container">
+      <div class="cart-items">
+        @for (item of cart.itemsWithDetails(); track item.product.id + item.variant.id) {
+          <mat-card class="cart-item">
+            <div class="item-image">
+              <img [src]="item.product.images[0]?.url" [alt]="item.product.name">
+            </div>
+            <div class="item-details">
+              <h3>{{item.product.name}}</h3>
+              <p class="variant">{{item.variant.name}}</p>
+              <p class="vendor">Sold by: {{dataService.getVendorById(item.product.vendorId)?.storeName}}</p>
+              <div class="item-price">INR {{item.variant.price | number:'1.0-0'}}</div>
+            </div>
+            <div class="item-quantity">
+              <button mat-icon-button (click)="updateQuantity(item.product.id, item.variant.id, item.quantity - 1)" [disabled]="item.quantity <= 1">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span>{{item.quantity}}</span>
+              <button mat-icon-button (click)="updateQuantity(item.product.id, item.variant.id, item.quantity + 1)" [disabled]="item.quantity >= item.variant.stock">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            <div class="item-total">
+              INR {{item.subtotal | number:'1.0-0'}}
+            </div>
+            <button mat-icon-button class="remove-btn" (click)="removeItem(item.product.id, item.variant.id)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </mat-card>
+        }
+
+        <button mat-stroked-button color="warn" (click)="clearCart()" class="clear-btn">
+          <mat-icon>delete_sweep</mat-icon> Clear Cart
+        </button>
+      </div>
+
+      <div class="order-summary">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Order Summary</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="summary-row">
+              <span>Subtotal ({{cart.itemCount()}} items)</span>
+              <span>INR {{cart.subtotal() | number:'1.0-0'}}</span>
+            </div>
+            <div class="summary-row">
+              <span>Shipping</span>
+              <span>
+                @if (shippingCost() === 0) {
+                  <span class="free">FREE</span>
+                } @else {
+                  <span>INR {{shippingCost()}}</span>
+                }
+              </span>
+            </div>
+            <div class="summary-row">
+              <span>Tax (18%)</span>
+              <span>INR {{tax() | number:'1.0-0'}}</span>
+            </div>
+            @if (discount > 0) {
+              <div class="summary-row discount">
+                <span>Discount ({{appliedCoupon}})</span>
+                <span>-INR {{discount | number:'1.0-0'}}</span>
+              </div>
+            }
+
+            <mat-divider></mat-divider>
+
+            <div class="summary-row total">
+              <span>Total</span>
+              <span>INR {{total() | number:'1.0-0'}}</span>
+            </div>
+
+            <div class="coupon-section">
+              @if (!appliedCoupon) {
+                <mat-form-field appearance="outline">
+                  <mat-label>Coupon Code</mat-label>
+                  <input matInput [(ngModel)]="couponCode">
+                  <button matSuffix mat-button color="primary" (click)="applyCoupon()">Apply</button>
+                </mat-form-field>
+              } @else {
+                <div class="applied-coupon">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Coupon {{appliedCoupon}} applied</span>
+                  <button mat-button (click)="removeCoupon()">Remove</button>
+                </div>
+              }
+            </div>
+
+            <button mat-raised-button color="primary" class="checkout-btn" (click)="checkout()">
+              Proceed to Checkout
+            </button>
+
+            <a mat-stroked-button routerLink="/products" class="continue-btn">
+              Continue Shopping
+            </a>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  } @else {
+    <div class="empty-cart">
+      <mat-icon>shopping_cart</mat-icon>
+      <h2>Your cart is empty</h2>
+      <p>Add items to your cart to see them here</p>
+      <button mat-raised-button color="primary" routerLink="/products">Start Shopping</button>
+    </div>
+  }
+</div>

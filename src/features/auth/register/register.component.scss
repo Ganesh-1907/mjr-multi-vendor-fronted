@@ -1,0 +1,99 @@
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+}
+
+.register-card {
+  width: 100%;
+  max-width: 480px;
+
+  mat-card-header {
+    text-align: center;
+    margin-bottom: 24px;
+
+    mat-card-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.mat-mdc-card-content {
+  padding: 24px;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+}
+
+.role-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+
+  button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    padding: 12px 16px;
+
+    &.active {
+      background: #1a237e;
+      color: white;
+      border-color: #1a237e;
+    }
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.register-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.mat-divider {
+  margin: 24px 0;
+}
+
+.login-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  span {
+    color: #666;
+  }
+}
+
+@media (max-width: 480px) {
+  .name-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,117 @@
+.main-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  background: #1a237e;
+  color: white;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 20px;
+
+  .mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .logo-text {
+    @media (max-width: 600px) {
+      display: none;
+    }
+  }
+}
+
+.search-form {
+  flex: 1;
+  max-width: 600px;
+
+  .search-input {
+    width: 100%;
+
+    ::ng-deep {
+      .mdc-notched-outline {
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .mdc-floating-label {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .mat-mdc-icon-button .mat-icon {
+        color: white;
+      }
+    }
+
+    input {
+      color: white;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+  }
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .nav-link {
+    color: white;
+
+    .mat-icon {
+      margin-right: 4px;
+    }
+  }
+
+  .login-btn {
+    min-width: 80px;
+  }
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  color: white;
+
+  &.hide-mobile {
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+}
+
+.user-menu-btn {
+  color: white;
+}
+
+::ng-deep {
+  .mat-mdc-menu-content {
+    padding: 8px 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .search-form {
+    margin: 0 8px;
+  }
+}

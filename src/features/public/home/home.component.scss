@@ -1,0 +1,249 @@
+:host {
+  display: block;
+}
+
+.hero-section {
+  margin-bottom: 40px;
+}
+
+.banner-carousel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  height: 400px;
+}
+
+.banner-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.5s ease;
+}
+
+.banner-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.6) 0%, transparent 60%);
+  }
+}
+
+.banner-content {
+  position: absolute;
+  left: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  max-width: 500px;
+
+  h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 18px;
+    margin-bottom: 24px;
+    opacity: 0.9;
+  }
+}
+
+.banner-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 10;
+
+  &.prev { left: 16px; }
+  &.next { right: 16px; }
+}
+
+.banner-dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &.active {
+      background: white;
+      width: 24px;
+      border-radius: 4px;
+    }
+  }
+}
+
+.categories-section, .featured-section, .trending-section {
+  padding: 40px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #212121;
+  }
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.category-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .category-image {
+    height: 120px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+  }
+
+  &:hover .category-image img {
+    transform: scale(1.1);
+  }
+
+  .category-info {
+    padding: 16px;
+    text-align: center;
+
+    mat-icon {
+      font-size: 32px;
+      color: #1a237e;
+      margin-bottom: 8px;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 500;
+      color: #212121;
+      margin-bottom: 4px;
+    }
+
+    p {
+      font-size: 13px;
+      color: #757575;
+    }
+  }
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.features-section {
+  background: #1a237e;
+  padding: 48px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px;
+  max-width: 100%;
+  margin-top: 40px;
+}
+
+.feature-card {
+  text-align: center;
+  color: white;
+  padding: 24px;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    color: #7986cb;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 14px;
+    opacity: 0.8;
+  }
+}
+
+@media (max-width: 768px) {
+  .banner-carousel {
+    height: 280px;
+  }
+
+  .banner-content {
+    left: 24px;
+
+    h1 { font-size: 24px; }
+    p { font-size: 14px; }
+  }
+
+  .categories-section, .featured-section, .trending-section {
+    padding: 24px 16px;
+  }
+
+  .features-section {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 32px 16px;
+  }
+}
+
+::ng-deep {
+  .dark-theme {
+    .section-header h2 {
+      color: #e0e0e0;
+    }
+
+    .category-card {
+      background: #1e1e1e;
+    }
+
+    .category-info h3 {
+      color: #e0e0e0;
+    }
+  }
+}

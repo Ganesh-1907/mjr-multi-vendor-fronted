@@ -1,0 +1,65 @@
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-section">
+      <h3>About MarketPlace</h3>
+      <p class="about-text">
+        MarketPlace is a multi-vendor e-commerce platform connecting millions of buyers with trusted sellers.
+        We offer a wide range of products with secure payments and fast delivery.
+      </p>
+      <div class="social-links">
+        <a href="#" mat-icon-button><mat-icon>facebook</mat-icon></a>
+        <a href="#" mat-icon-button><mat-icon>smart_display</mat-icon></a>
+        <a href="#" mat-icon-button><mat-icon>tag</mat-icon></a>
+        <a href="#" mat-icon-button><mat-icon>mail_outline</mat-icon></a>
+      </div>
+    </div>
+
+    <div class="footer-section">
+      <h3>Shop Categories</h3>
+      <ul>
+        <li><a routerLink="/products" [queryParams]="{category: 'electronics'}">Electronics</a></li>
+        <li><a routerLink="/products" [queryParams]="{category: 'fashion'}">Fashion</a></li>
+        <li><a routerLink="/products" [queryParams]="{category: 'home-kitchen'}">Home & Kitchen</a></li>
+        <li><a routerLink="/products" [queryParams]="{category: 'sports-fitness'}">Sports & Fitness</a></li>
+        <li><a routerLink="/products" [queryParams]="{category: 'books'}">Books</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-section">
+      <h3>Useful Links</h3>
+      <ul>
+        <li><a routerLink="/about">About Us</a></li>
+        <li><a routerLink="/contact">Contact Us</a></li>
+        <li><a routerLink="/faq">FAQ</a></li>
+        <li><a routerLink="/terms">Terms of Service</a></li>
+        <li><a routerLink="/privacy">Privacy Policy</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-section">
+      <h3>Newsletter</h3>
+      <p>Subscribe to receive updates on offers and new arrivals.</p>
+      <form class="newsletter-form" (ngSubmit)="subscribeNewsletter()">
+        <mat-form-field appearance="outline" class="newsletter-input">
+          <input matInput type="email" placeholder="Enter your email" [(ngModel)]="email" name="email" required>
+        </mat-form-field>
+        <button mat-raised-button color="primary" type="submit">Subscribe</button>
+      </form>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="footer-bottom">
+    <div class="payment-methods">
+      <span>We accept:</span>
+      <mat-icon>credit_card</mat-icon>
+      <mat-icon>account_balance</mat-icon>
+      <mat-icon>phone_android</mat-icon>
+      <mat-icon>payments</mat-icon>
+    </div>
+    <div class="copyright">
+      &copy; {{currentYear}} MarketPlace. All rights reserved.
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,35 @@
+<mat-card class="product-card" [routerLink]="['/products', product.slug]">
+  <div class="product-image-container">
+    <img [src]="primaryImage" [alt]="product.name" class="product-image">
+    @if (discount > 0) {
+      <span class="discount-badge">{{discount}}% OFF</span>
+    }
+    @if (product.isTrending) {
+      <span class="trending-badge">Trending</span>
+    }
+    <div class="product-actions">
+      <button mat-mini-fab color="primary" (click)="addToCart($event)" matTooltip="Add to Cart">
+        <mat-icon>add_shopping_cart</mat-icon>
+      </button>
+      <button mat-mini-fab [color]="isInWishlist() ? 'warn' : 'basic'" (click)="toggleWishlist($event)" [matTooltip]="isInWishlist() ? 'Remove from Wishlist' : 'Add to Wishlist'">
+        <mat-icon>{{isInWishlist() ? 'favorite' : 'favorite_border'}}</mat-icon>
+      </button>
+    </div>
+  </div>
+  <mat-card-content>
+    <p class="product-name">{{product.name}}</p>
+    <div class="price-row">
+      <span class="current-price">INR {{primaryVariant?.price | number:'1.0-0'}}</span>
+      @if (primaryVariant?.comparePrice) {
+        <span class="original-price">INR {{primaryVariant.comparePrice | number:'1.0-0'}}</span>
+      }
+    </div>
+    <div class="rating-row">
+      <span class="rating">
+        <mat-icon class="star-icon">star</mat-icon>
+        {{product.rating | number:'1.1-1'}}
+      </span>
+      <span class="reviews">({{product.totalReviews}} reviews)</span>
+    </div>
+  </mat-card-content>
+</mat-card>

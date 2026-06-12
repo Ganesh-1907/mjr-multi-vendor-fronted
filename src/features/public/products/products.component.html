@@ -1,0 +1,110 @@
+<div class="products-page">
+  <div class="page-header">
+    <div class="container">
+      <h1>All Products</h1>
+      <p>Browse our complete collection of products</p>
+    </div>
+  </div>
+
+  <div class="products-container">
+    <aside class="filters-sidebar">
+      <mat-accordion>
+        <mat-expansion-panel [expanded]="true">
+          <mat-expansion-panel-header>
+            <mat-panel-title>Categories</mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="filter-options">
+            @for (category of categories; track category.id) {
+              <label class="filter-option" [class.active]="selectedCategory() === category.id" (click)="selectCategory(selectedCategory() === category.id ? null : category.id)">
+                <span>{{category.name}}</span>
+                <span class="count">({{category.productCount}})</span>
+              </label>
+            }
+          </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Price Range</mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="price-filter">
+            <div class="price-input">
+              <mat-form-field appearance="outline">
+                <mat-label>Min</mat-label>
+                <input matInput type="number" [value]="priceRange()[0]" (input)="onPriceRangeChange([+$any($event.target).value, priceRange()[1]])">
+              </mat-form-field>
+              <span class="separator">to</span>
+              <mat-form-field appearance="outline">
+                <mat-label>Max</mat-label>
+                <input matInput type="number" [value]="priceRange()[1]" (input)="onPriceRangeChange([priceRange()[0], +$any($event.target).value])">
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Rating</mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="filter-options">
+            @for (rating of [4, 3, 2, 1]; track rating) {
+              <label class="filter-option" [class.active]="selectedRating() === rating" (click)="setRating(selectedRating() === rating ? null : rating)">
+                <span class="rating-stars">
+                  <mat-icon>star</mat-icon>
+                  {{rating}}
+                </span>
+                <span>& above</span>
+              </label>
+            }
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
+
+      @if (hasActiveFilters()) {
+        <button mat-stroked-button color="warn" class="clear-btn" (click)="clearAllFilters()">
+          <mat-icon>clear_all</mat-icon> Clear All Filters
+        </button>
+      }
+    </aside>
+
+    <main class="products-main">
+      <div class="toolbar">
+        <div class="search-bar">
+          <mat-form-field appearance="outline" class="search-field">
+            <input matInput placeholder="Search products..." [value]="searchQuery()" (input)="updateSearch($any($event.target).value)">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="sort-and-count">
+          <span class="result-count">{{products().length}} Products</span>
+          <mat-form-field appearance="outline" class="sort-field">
+            <mat-label>Sort By</mat-label>
+            <mat-select [value]="selectedSort()" (selectionChange)="setSort($event.value)">
+              <mat-option value="featured">Featured</mat-option>
+              <mat-option value="price-low">Price: Low to High</mat-option>
+              <mat-option value="price-high">Price: High to Low</mat-option>
+              <mat-option value="rating">Highest Rated</mat-option>
+              <mat-option value="newest">Newest First</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      @if (products().length > 0) {
+        <div class="products-grid">
+          @for (product of products(); track product.id) {
+            <app-product-card [product]="product"></app-product-card>
+          }
+        </div>
+      } @else {
+        <div class="no-results">
+          <mat-icon large>search_off</mat-icon>
+          <h3>No products found</h3>
+          <p>Try adjusting your filters or search terms</p>
+          <button mat-raised-button color="primary" (click)="clearAllFilters()">Clear Filters</button>
+        </div>
+      }
+    </main>
+  </div>
+</div>

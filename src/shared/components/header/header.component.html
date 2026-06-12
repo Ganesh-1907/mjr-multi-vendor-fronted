@@ -1,0 +1,78 @@
+<mat-toolbar class="main-header">
+  <a routerLink="/" class="logo">
+    <mat-icon>shopping_bag</mat-icon>
+    <span class="logo-text">MarketPlace</span>
+  </a>
+
+  <button mat-button [matMenuTriggerFor]="categoriesMenu" class="nav-link hide-mobile">
+    <mat-icon>category</mat-icon>
+    <span>Categories</span>
+    <mat-icon class="arrow">keyboard_arrow_down</mat-icon>
+  </button>
+  <mat-menu #categoriesMenu="matMenu">
+    @for (category of categories; track category.id) {
+      <a mat-menu-item routerLink="/products" [queryParams]="{category: category.slug}">
+        <mat-icon>{{category.icon}}</mat-icon>
+        <span>{{category.name}}</span>
+      </a>
+    }
+  </mat-menu>
+
+  <form class="search-form" (ngSubmit)="onSearch()">
+    <mat-form-field class="search-input" appearance="outline">
+      <input matInput type="text" placeholder="Search for products, brands and more" [(ngModel)]="searchQuery" name="search">
+      <button mat-icon-button matSuffix type="submit">
+        <mat-icon>search</mat-icon>
+      </button>
+    </mat-form-field>
+  </form>
+
+  <nav class="nav-links">
+    @if (auth.isAuthenticated()) {
+      <a mat-button routerLink="/customer/orders" class="nav-link hide-mobile">
+        <mat-icon>local_shipping</mat-icon>
+        <span>Orders</span>
+      </a>
+    }
+
+    <a mat-button routerLink="/wishlist" class="nav-link" [matBadge]="wishlist.itemCount()" [matBadgeHidden]="wishlist.itemCount() === 0" matBadgeColor="warn">
+      <mat-icon>favorite_border</mat-icon>
+      <span class="hide-mobile">Wishlist</span>
+    </a>
+
+    <a mat-button routerLink="/cart" class="nav-link" [matBadge]="cart.itemCount()" [matBadgeHidden]="cart.itemCount() === 0" matBadgeColor="warn">
+      <mat-icon>shopping_cart</mat-icon>
+      <span class="hide-mobile">Cart</span>
+    </a>
+
+    @if (auth.isAuthenticated()) {
+      <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-btn">
+        <mat-icon>account_circle</mat-icon>
+        <span class="hide-mobile">{{auth.currentUser()?.firstName}}</span>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <a mat-menu-item [routerLink]="getDashboardUrl()">
+          <mat-icon>dashboard</mat-icon>
+          <span>Dashboard</span>
+        </a>
+        <a mat-menu-item routerLink="/customer/profile">
+          <mat-icon>person</mat-icon>
+          <span>My Profile</span>
+        </a>
+        <button mat-menu-item (click)="theme.toggleTheme()">
+          <mat-icon>{{theme.isDarkMode() ? 'light_mode' : 'dark_mode'}}</mat-icon>
+          <span>{{theme.isDarkMode() ? 'Light Mode' : 'Dark Mode'}}</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Logout</span>
+        </button>
+      </mat-menu>
+    } @else {
+      <a mat-raised-button color="primary" routerLink="/auth/login" class="login-btn">
+        <span>Login</span>
+      </a>
+    }
+  </nav>
+</mat-toolbar>

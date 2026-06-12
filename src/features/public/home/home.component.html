@@ -1,0 +1,100 @@
+<section class="hero-section">
+  @if (banners.length > 0) {
+    <div class="banner-carousel">
+      <div class="banner-track" [style.transform]="'translateX(-' + (currentBanner * 100) + '%)'">
+        @for (banner of banners; track banner.id) {
+          <div class="banner-slide" [style.backgroundImage]="'url(' + banner.image + ')'">
+            <div class="banner-content">
+              <h1>{{banner.title}}</h1>
+              <p>{{banner.subtitle}}</p>
+              @if (banner.buttonText) {
+                <a mat-raised-button color="primary" [routerLink]="banner.link">
+                  {{banner.buttonText}}
+                </a>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <button mat-icon-button class="banner-nav prev" (click)="prevBanner()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button mat-icon-button class="banner-nav next" (click)="nextBanner()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <div class="banner-dots">
+        @for (banner of banners; track banner.id; let i = $index) {
+          <button class="dot" [class.active]="i === currentBanner" (click)="selectBanner(i)"></button>
+        }
+      </div>
+    </div>
+  }
+</section>
+
+<section class="categories-section">
+  <div class="section-header">
+    <h2>Shop by Category</h2>
+    <a mat-button routerLink="/categories">View All</a>
+  </div>
+  <div class="categories-grid">
+    @for (category of categories; track category.id) {
+      <a [routerLink]="['/products']" [queryParams]="{category: category.slug}" class="category-card">
+        <div class="category-image">
+          <img [src]="category.image" [alt]="category.name">
+        </div>
+        <div class="category-info">
+          <mat-icon>{{category.icon}}</mat-icon>
+          <h3>{{category.name}}</h3>
+          <p>{{category.productCount}} Products</p>
+        </div>
+      </a>
+    }
+  </div>
+</section>
+
+<section class="featured-section">
+  <div class="section-header">
+    <h2>Featured Products</h2>
+    <a mat-button routerLink="/products" [queryParams]="{featured: 'true'}">View All</a>
+  </div>
+  <div class="products-grid">
+    @for (product of featuredProducts; track product.id) {
+      <app-product-card [product]="product"></app-product-card>
+    }
+  </div>
+</section>
+
+<section class="trending-section">
+  <div class="section-header">
+    <h2>Trending Now</h2>
+    <a mat-button routerLink="/products" [queryParams]="{trending: 'true'}">View All</a>
+  </div>
+  <div class="products-grid">
+    @for (product of trendingProducts; track product.id) {
+      <app-product-card [product]="product"></app-product-card>
+    }
+  </div>
+</section>
+
+<section class="features-section">
+  <div class="feature-card">
+    <mat-icon>local_shipping</mat-icon>
+    <h3>Free Delivery</h3>
+    <p>On orders over INR 500</p>
+  </div>
+  <div class="feature-card">
+    <mat-icon>verified_user</mat-icon>
+    <h3>Secure Payment</h3>
+    <p>100% secure transactions</p>
+  </div>
+  <div class="feature-card">
+    <mat-icon>support_agent</mat-icon>
+    <h3>24/7 Support</h3>
+    <p>Dedicated customer service</p>
+  </div>
+  <div class="feature-card">
+    <mat-icon>assignment_return</mat-icon>
+    <h3>Easy Returns</h3>
+    <p>7-day hassle-free returns</p>
+  </div>
+</section>
