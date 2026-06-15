@@ -8,13 +8,13 @@ export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
-    const userRole = authService.userRole();
+    const userRole = authService.userRole()?.toLowerCase();
 
     if (!authService.isAuthenticated()) {
       return router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: state.url } });
     }
 
-    if (userRole && allowedRoles.includes(userRole)) {
+    if (userRole && allowedRoles.map(r => r.toLowerCase()).includes(userRole)) {
       return true;
     }
 

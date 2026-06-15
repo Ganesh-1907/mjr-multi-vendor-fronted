@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -15,7 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { ThemeService } from '../../../core/services/theme.service';
-import { DataService } from '../../../core/services/data.service';
+import { ApiDataService, Category } from '../../../core/services/api-data.service';
 
 @Component({
   selector: 'app-header',
@@ -24,17 +24,25 @@ import { DataService } from '../../../core/services/data.service';
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss'
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   auth = inject(AuthService);
   cart = inject(CartService);
   wishlist = inject(WishlistService);
   theme = inject(ThemeService);
-  dataService = inject(DataService);
+  private apiData = inject(ApiDataService);
   router = inject(Router);
 
   searchQuery = '';
 
-  categories = this.dataService.getCategories();
+  categories = signal<Category[]>([]);
+
+  ngOnInit(): void {
+    this.apiData.getCategories().subscribe(categories => {
+      this.categories.set(categories);
+    });
+    this.cart.loadCart();
+    this.wishlist.loadWishlist();
+  }
 
   onSearch(): void {
     if (this.searchQuery.trim()) {
@@ -49,6 +57,15 @@ export class HeaderComponent {
       case 'admin': return '/admin/dashboard';
       case 'vendor': return '/vendor/dashboard';
       default: return '/customer/dashboard';
+    }
+  }
+
+  get ordersLink(): string {
+    const role = this.auth.userRole();
+    switch (role) {
+      case 'admin': return '/admin/orders';
+      case 'vendor': return '/vendor/orders';
+      default: return '/customer/orders';
     }
   }
 

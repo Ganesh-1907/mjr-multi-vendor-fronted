@@ -2,22 +2,22 @@
   <mat-card class="register-card">
     <mat-card-header>
       <mat-card-title>Create Account</mat-card-title>
-      <mat-card-subtitle>Join MarketPlace today</mat-card-subtitle>
+      <mat-card-subtitle>Join N-CommerceHub today</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
       <div class="role-selector">
-        <button mat-stroked-button [class.active]="selectedRole() === 'customer'" (click)="setRole('customer')">
+        <button mat-stroked-button [class.active]="selectedRole() === 'customer'" (click)="setRole('customer')" [disabled]="otpSent()">
           <mat-icon>person</mat-icon>
           Customer
         </button>
-        <button mat-stroked-button [class.active]="selectedRole() === 'vendor'" (click)="setRole('vendor')">
+        <button mat-stroked-button [class.active]="selectedRole() === 'vendor'" (click)="setRole('vendor')" [disabled]="otpSent()">
           <mat-icon>store</mat-icon>
           Vendor
         </button>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="register()">
+      <form [formGroup]="form" (ngSubmit)="otpSent() ? register() : sendOtp()">
         <div class="name-row">
           <mat-form-field appearance="outline">
             <mat-label>First Name</mat-label>
@@ -34,7 +34,7 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" placeholder="Enter your email">
+          <input matInput type="email" formControlName="email" placeholder="Enter your email" [readonly]="otpSent()">
           <mat-icon matPrefix>email</mat-icon>
         </mat-form-field>
 
@@ -43,6 +43,14 @@
           <input matInput type="tel" formControlName="phone" placeholder="10-digit number">
           <mat-icon matPrefix>phone</mat-icon>
         </mat-form-field>
+
+        @if (selectedRole() === 'vendor') {
+          <mat-form-field appearance="outline">
+            <mat-label>Store Name</mat-label>
+            <input matInput formControlName="storeName" placeholder="Your store name">
+            <mat-icon matPrefix>storefront</mat-icon>
+          </mat-form-field>
+        }
 
         <mat-form-field appearance="outline">
           <mat-label>Password</mat-label>
@@ -53,16 +61,35 @@
           </button>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid" class="register-btn">
-          Create Account
-        </button>
+        @if (otpSent()) {
+          <mat-form-field appearance="outline">
+            <mat-label>OTP Code</mat-label>
+            <input matInput formControlName="otp" placeholder="Enter 6-digit OTP">
+            <mat-icon matPrefix>pin</mat-icon>
+          </mat-form-field>
+        }
+
+        @if (!otpSent()) {
+          <button mat-raised-button color="primary" type="submit" [disabled]="form.get('email')?.invalid || isLoading()" class="register-btn">
+            @if (isLoading()) { Sending OTP... } @else { Send OTP }
+          </button>
+        }
+
+        @if (otpSent()) {
+          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isLoading()" class="register-btn">
+            @if (isLoading()) { Creating Account... } @else { Verify & Register }
+          </button>
+          <button mat-button type="button" color="accent" (click)="sendOtp()" [disabled]="isLoading()" class="resend-btn">
+            Resend OTP
+          </button>
+        }
       </form>
 
       <mat-divider></mat-divider>
 
       <div class="login-link">
         <span>Already have an account?</span>
-        <a mat-raised-button color="accent" routerLink="/auth/login">Sign In</a>
+        <a routerLink="/auth/login">Sign In</a>
       </div>
     </mat-card-content>
   </mat-card>

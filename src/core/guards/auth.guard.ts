@@ -22,7 +22,7 @@ export const guestGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  const role = authService.userRole();
+  const role = authService.userRole()?.toLowerCase();
   switch (role) {
     case 'admin':
       return router.createUrlTree(['/admin/dashboard']);

@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Product } from '../../../core/models';
+import { ProductPreview } from '../../../core/services/api-data.service';
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -20,7 +20,7 @@ import { Router } from '@angular/router';
   styleUrl: './product-card.component.scss'
 })
 export class ProductCardComponent {
-  @Input() product!: Product;
+  @Input() product!: ProductPreview;
   @Input() showVendor = true;
 
   cart = inject(CartService);
@@ -30,34 +30,55 @@ export class ProductCardComponent {
   snackBar = inject(MatSnackBar);
 
   get primaryImage(): string {
-    return this.product.images.find(img => img.isPrimary)?.url || this.product.images[0]?.url || 'assets/placeholder.png';
+    return this.product.primaryImageUrl || 'assets/placeholder.png';
   }
 
-  get primaryVariant() {
-    return this.product.variants[0];
+  get primaryVariant(): any {
+    return { price: this.product.primaryVariantPrice, comparePrice: this.product.primaryVariantComparePrice, id: this.product.primaryVariantId };
   }
 
   get discount(): number {
-    if (this.primaryVariant?.comparePrice) {
-      return Math.round(((this.primaryVariant.comparePrice - this.primaryVariant.price) / this.primaryVariant.comparePrice) * 100);
-    }
-    return 0;
+    return this.product.discountPercent || 0;
   }
 
   addToCart(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    if (this.product.variants.length > 0) {
-      this.cart.addToCart(this.product.id, this.product.variants[0].id);
-      this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 }).onAction().subscribe(() => {
-        this.router.navigate(['/cart']);
+
+    if (!this.auth.isAuthenticated()) {
+      localStorage.setItem('pending_action', JSON.stringify({
+        type: 'addToCart',
+        productId: this.product.id,
+        variantId: this.primaryVariant.id,
+        quantity: 1
+      }));
+      this.router.navigate(['/auth/login'], {
+        queryParams: { role: 'customer', redirectTo: this.router.url }
       });
+      return;
     }
+
+    this.cart.addToCart(this.product.id, this.primaryVariant.id);
+    this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 }).onAction().subscribe(() => {
+      this.router.navigate(['/cart']);
+    });
   }
 
   toggleWishlist(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
+
+    if (!this.auth.isAuthenticated()) {
+      localStorage.setItem('pending_action', JSON.stringify({
+        type: 'toggleWishlist',
+        productId: this.product.id
+      }));
+      this.router.navigate(['/auth/login'], {
+        queryParams: { role: 'customer', redirectTo: this.router.url }
+      });
+      return;
+    }
+
     this.wishlist.toggleWishlist(this.product.id);
     const message = this.wishlist.isInWishlist(this.product.id) ? 'Added to wishlist' : 'Removed from wishlist';
     this.snackBar.open(message, 'Close', { duration: 2000 });

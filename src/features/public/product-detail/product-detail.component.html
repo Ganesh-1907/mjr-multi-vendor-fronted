@@ -1,30 +1,30 @@
-@if (product) {
+@if (product()) {
   <div class="product-detail-page">
     <div class="breadcrumb">
       <span routerLink="/">Home</span>
       <mat-icon>chevron_right</mat-icon>
       <span routerLink="/products">Products</span>
-      @if (category) {
+      @if (category()) {
         <mat-icon>chevron_right</mat-icon>
-        <span [routerLink]="['/products']" [queryParams]="{category: category.slug}">{{category.name}}</span>
+        <span [routerLink]="['/products']" [queryParams]="{category: category()?.slug}">{{category()?.name}}</span>
       }
       <mat-icon>chevron_right</mat-icon>
-      <span class="current">{{product.name}}</span>
+      <span class="current">{{product()?.name}}</span>
     </div>
 
     <mat-card class="product-main">
       <div class="product-images-section">
         <div class="thumbnails">
-          @for (image of images; track image) {
+          @for (image of images(); track image) {
             <button class="thumbnail-btn" [class.active]="selectedImage() === image" (click)="selectImage(image)">
-              <img [src]="image" [alt]="product.name">
+              <img [src]="image" [alt]="product()?.name">
             </button>
           }
         </div>
         <div class="main-image">
-          <img [src]="primaryImage" [alt]="product.name">
-          @if (discount > 0) {
-            <span class="discount-tag">{{discount}}% OFF</span>
+          <img [src]="primaryImage()" [alt]="product()?.name">
+          @if (discount() > 0) {
+            <span class="discount-tag">{{discount()}}% OFF</span>
           }
           <button mat-icon-button class="wishlist-btn" [color]="isInWishlist() ? 'warn' : 'default'" (click)="toggleWishlist()">
             <mat-icon>{{isInWishlist() ? 'favorite' : 'favorite_border'}}</mat-icon>
@@ -33,20 +33,20 @@
       </div>
 
       <div class="product-info-section">
-        <h1 class="product-title">{{product.name}}</h1>
+        <h1 class="product-title">{{product()?.name}}</h1>
 
         <div class="rating-row">
           <span class="rating-badge">
             <mat-icon>star</mat-icon>
-            {{product.rating | number:'1.1-1'}}
+            {{product()?.rating | number:'1.1-1'}}
           </span>
-          <span class="review-count">{{product.totalReviews}} Reviews</span>
+          <span class="review-count">{{product()?.totalReviews}} Reviews</span>
         </div>
 
         <div class="brand-row">
-          @if (vendor) {
+          @if (vendor()) {
             <span>Sold by: </span>
-            <a [routerLink]="['/vendors', vendor.id]" class="vendor-link">{{vendor.storeName}}</a>
+            <a [routerLink]="['/vendors', vendor()?.id]" class="vendor-link">{{vendor()?.storeName}}</a>
           }
         </div>
 
@@ -63,7 +63,7 @@
         <div class="variants-section">
           <h4>Select Variant</h4>
           <div class="variant-buttons">
-            @for (variant of product.variants; track variant.id) {
+            @for (variant of product()?.variants; track variant.id) {
               <button mat-stroked-button [color]="selectedVariant()?.id === variant.id ? 'primary' : 'default'" class="variant-btn" [class.selected]="selectedVariant()?.id === variant.id" (click)="selectVariant(variant)">
                 {{variant.name}}
               </button>
@@ -106,7 +106,7 @@
 
         <div class="total-price">
           <span>Total:</span>
-          <span class="total-value">INR {{totalPrice | number:'1.0-0'}}</span>
+          <span class="total-value">INR {{totalPrice() | number:'1.0-0'}}</span>
         </div>
       </div>
     </mat-card>
@@ -115,14 +115,14 @@
       <mat-tab-group>
         <mat-tab label="Description">
           <div class="tab-content">
-            <p>{{product.description}}</p>
+            <p>{{product()?.description}}</p>
           </div>
         </mat-tab>
 
         <mat-tab label="Specifications">
           <div class="tab-content">
             <div class="specs-grid">
-              @for (spec of product.specifications | keyvalue; track spec.key) {
+              @for (spec of product()?.specifications | keyvalue; track spec.key) {
                 <div class="spec-row">
                   <span class="spec-key">{{spec.key}}</span>
                   <span class="spec-value">{{spec.value}}</span>
@@ -132,11 +132,11 @@
           </div>
         </mat-tab>
 
-        <mat-tab label="Reviews ({{reviews.length}})">
+        <mat-tab label="Reviews ({{reviews().length}})">
           <div class="tab-content">
-            @if (reviews.length > 0) {
+            @if (reviews().length > 0) {
               <div class="reviews-list">
-                @for (review of reviews; track review.id) {
+                @for (review of reviews(); track review.id) {
                   <div class="review-item">
                     <div class="review-header">
                       <span class="reviewer-name">{{review.customerName}}</span>
@@ -164,16 +164,16 @@
       </mat-tab-group>
     </mat-card>
 
-    @if (relatedProducts.length > 0) {
+    @if (relatedProducts().length > 0) {
       <section class="related-section">
         <h2>Related Products</h2>
         <div class="related-grid">
-          @for (prod of relatedProducts; track prod.id) {
+          @for (prod of relatedProducts(); track prod.id) {
             <a [routerLink]="['/products', prod.slug]" class="related-card">
-              <img [src]="prod.images[0]?.url" [alt]="prod.name">
+              <img [src]="prod.primaryImageUrl" [alt]="prod.name">
               <div class="related-info">
                 <p>{{prod.name}}</p>
-                <span>INR {{prod.variants[0]?.price | number:'1.0-0'}}</span>
+                <span>INR {{prod.primaryVariantPrice | number:'1.0-0'}}</span>
               </div>
             </a>
           }

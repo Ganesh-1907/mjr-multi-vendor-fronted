@@ -1,6 +1,6 @@
 <mat-card class="product-card" [routerLink]="['/products', product.slug]">
   <div class="product-image-container">
-    <img [src]="primaryImage" [alt]="product.name" class="product-image">
+    <img [src]="primaryImage" [alt]="product.name" class="product-image" (error)="$any($event.target).src='https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=300'">
     @if (discount > 0) {
       <span class="discount-badge">{{discount}}% OFF</span>
     }
@@ -19,9 +19,9 @@
   <mat-card-content>
     <p class="product-name">{{product.name}}</p>
     <div class="price-row">
-      <span class="current-price">INR {{primaryVariant?.price | number:'1.0-0'}}</span>
-      @if (primaryVariant?.comparePrice) {
-        <span class="original-price">INR {{primaryVariant.comparePrice | number:'1.0-0'}}</span>
+      <span class="current-price">INR {{product.primaryVariantPrice | number:'1.0-0'}}</span>
+      @if (product.primaryVariantComparePrice) {
+        <span class="original-price">INR {{product.primaryVariantComparePrice | number:'1.0-0'}}</span>
       }
     </div>
     <div class="rating-row">

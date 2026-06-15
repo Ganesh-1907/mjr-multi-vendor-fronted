@@ -51,9 +51,28 @@
     padding: 12px 16px;
 
     &.active {
-      background: #1a237e;
-      color: white;
-      border-color: #1a237e;
+      background: var(--primary) !important;
+      color: white !important;
+      border-color: var(--primary) !important;
+
+      &:hover {
+        background: var(--primary-hover) !important;
+        color: white !important;
+      }
+
+      mat-icon {
+        color: white !important;
+      }
+    }
+
+    &:not(.active):hover {
+      background: var(--bg-tertiary) !important;
+      color: var(--primary) !important;
+      border-color: var(--primary) !important;
+
+      mat-icon {
+        color: var(--primary) !important;
+      }
     }
 
     mat-icon {
@@ -85,10 +104,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
 
   span {
-    color: #666;
+    color: var(--text-secondary);
+  }
+
+  a {
+    color: #10b981 !important;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #059669 !important;
+      text-decoration: underline;
+    }
   }
 }
 

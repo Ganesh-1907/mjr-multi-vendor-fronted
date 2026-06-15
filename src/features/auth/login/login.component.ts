@@ -1,7 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -10,18 +10,28 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
-import { CommonModule as NgCommonModule } from '@angular/common';
+import { CartService } from '../../../core/services/cart.service';
+import { WishlistService } from '../../../core/services/wishlist.service';
+
+export interface PendingAction {
+  type: 'addToCart' | 'toggleWishlist';
+  productId: number;
+  variantId?: number;
+  quantity?: number;
+}
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, NgCommonModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatInputModule, MatFormFieldModule, MatCardModule, MatDividerModule],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatInputModule, MatFormFieldModule, MatCardModule, MatDividerModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  private cart = inject(CartService);
+  private wishlist = inject(WishlistService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
@@ -35,40 +45,75 @@ export class LoginComponent {
     password: ['', [Validators.required, Validators.minLength(6)]]
   });
 
-  returnMessage = signal('Test accounts - Customer: john.doe@email.com/password123 | Vendor: techstore@vendor.com/vendor123 | Admin: admin@marketplace.com/admin123');
+  returnMessage = signal('Welcome to N-CommerceHub');
+
+  ngOnInit(): void {
+    const roleParam = this.route.snapshot.queryParams['role'];
+    if (roleParam === 'customer' || roleParam === 'vendor' || roleParam === 'admin') {
+      this.selectedRole.set(roleParam);
+    }
+  }
 
   login(): void {
     if (this.form.invalid) return;
 
     this.isLoading.set(true);
 
-    setTimeout(() => {
-      const success = this.auth.login(
-        this.form.value.email,
-        this.form.value.password,
-        this.selectedRole()
-      );
+    this.auth.login({
+      email: this.form.value.email,
+      password: this.form.value.password,
+      role: this.selectedRole()
+    })
+      .then((user) => {
+          this.snackBar.open('Login successful!', 'Close', { duration: 3000 });
+          this.cart.loadCart();
+          this.wishlist.loadWishlist();
+          this.executePendingAction().then(() => {
+          const returnUrl = this.route.snapshot.queryParams['redirectTo']
+            || this.route.snapshot.queryParams['returnUrl']
+            || this.getDashboardUrl(user.role);
+          this.router.navigateByUrl(returnUrl);
+          this.isLoading.set(false);
+        });
+      })
+      .catch(err => {
+        this.snackBar.open(err, 'Close', { duration: 4000 });
+        this.isLoading.set(false);
+      });
+  }
 
-      if (success) {
-        this.snackBar.open('Login successful!', 'Close', { duration: 3000 });
+  private executePendingAction(): Promise<void> {
+    const raw = localStorage.getItem('pending_action');
+    if (!raw) return Promise.resolve();
 
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || this.getDashboardUrl();
-        this.router.navigateByUrl(returnUrl);
-      } else {
-        this.snackBar.open('Invalid credentials. Please try again.', 'Close', { duration: 3000 });
+    localStorage.removeItem('pending_action');
+
+    try {
+      const action: PendingAction = JSON.parse(raw);
+      if (action.type === 'addToCart' && action.productId && action.variantId) {
+        return this.cart.addToCart(action.productId, action.variantId, action.quantity || 1)
+          .then(() => {
+            this.snackBar.open('Item added to cart!', 'Close', { duration: 2000 });
+          });
       }
-      this.isLoading.set(false);
-    }, 500);
+      if (action.type === 'toggleWishlist' && action.productId) {
+        return this.wishlist.addToWishlist(action.productId)
+          .then(() => {
+            this.snackBar.open('Item added to wishlist!', 'Close', { duration: 2000 });
+          });
+      }
+    } catch {}
+    return Promise.resolve();
   }
 
   setRole(role: 'customer' | 'vendor' | 'admin'): void {
     this.selectedRole.set(role);
   }
 
-  private getDashboardUrl(): string {
-    switch (this.selectedRole()) {
-      case 'admin': return '/admin/dashboard';
-      case 'vendor': return '/vendor/dashboard';
+  private getDashboardUrl(role: string): string {
+    switch (role) {
+      case 'ADMIN': return '/admin/dashboard';
+      case 'VENDOR': return '/vendor/dashboard';
       default: return '/customer/dashboard';
     }
   }

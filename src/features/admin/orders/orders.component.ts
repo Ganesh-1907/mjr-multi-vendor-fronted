@@ -1,0 +1,632 @@
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatTableModule } from '@angular/material/table';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+import { ApiDataService, Order } from '../../../core/services/api-data.service';
+
+@Component({
+  selector: 'app-admin-orders',
+  standalone: true,
+  imports: [
+    CommonModule, FormsModule,
+    MatIconModule, MatButtonModule, MatCardModule, MatTableModule,
+    MatChipsModule, MatInputModule, MatFormFieldModule, MatSelectModule, MatTooltipModule,
+    MatMenuModule
+  ],
+  template: `
+    <div class="orders-page" [class.has-selection]="selectedOrder()">
+      <div class="page-header">
+        <h1>Orders Management</h1>
+        <div class="header-actions">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Search orders</mat-label>
+            <input matInput (keyup)="applyFilter()" [(ngModel)]="searchQuery" placeholder="Search by number, customer...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select [(ngModel)]="statusFilter" (selectionChange)="applyFilter()">
+              <mat-option value="">All Statuses</mat-option>
+              <mat-option value="pending">Pending</mat-option>
+              <mat-option value="confirmed">Confirmed</mat-option>
+              <mat-option value="processing">Processing</mat-option>
+              <mat-option value="shipped">Shipped</mat-option>
+              <mat-option value="delivered">Delivered</mat-option>
+              <mat-option value="cancelled">Cancelled</mat-option>
+              <mat-option value="returned">Returned</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="content-container">
+        <!-- Orders List Panel -->
+        <mat-card class="list-card">
+          <mat-card-content class="table-container">
+            <table mat-table [dataSource]="filteredOrders()" class="orders-table">
+              <ng-container matColumnDef="orderNumber">
+                <th mat-header-cell *matHeaderCellDef>Order Number</th>
+                <td mat-cell *matCellDef="let order">
+                  <span class="order-number">#{{order.orderNumber}}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="customer">
+                <th mat-header-cell *matHeaderCellDef>Customer</th>
+                <td mat-cell *matCellDef="let order">
+                  <span class="customer-name">{{order.shippingFullName || 'User #' + order.userId}}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let order">
+                  {{order.createdAt | date:'shortDate'}}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef>Total</th>
+                <td mat-cell *matCellDef="let order">
+                  {{order.totalAmount || order.total | currency:'INR'}}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let order">
+                  <span class="status-badge {{order.status?.toLowerCase()}}">{{order.status}}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <td mat-cell *matCellDef="let order">
+                  <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()" title="Actions">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #menu="matMenu">
+                    <button mat-menu-item (click)="selectOrder(order)">
+                      <mat-icon>visibility</mat-icon>
+                      <span>View Details</span>
+                    </button>
+                    <button mat-menu-item (click)="openStatusModal(order)">
+                      <mat-icon>edit</mat-icon>
+                      <span>Update Status</span>
+                    </button>
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                  [class.selected-row]="selectedOrder()?.id === row.id"
+                  (click)="selectOrder(row)"></tr>
+            </table>
+
+            <div *ngIf="filteredOrders().length === 0" class="no-records">
+              No orders found matching the filters.
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Order Detail Panel -->
+        <mat-card class="detail-card" *ngIf="selectedOrder() as order">
+          <mat-card-header class="detail-header">
+            <div class="detail-title-group">
+              <mat-card-title>Order Detail</mat-card-title>
+              <mat-card-subtitle>#{{order.orderNumber}}</mat-card-subtitle>
+            </div>
+            <button mat-icon-button class="close-btn" (click)="closeDetail()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-card-header>
+          
+          <mat-card-content class="detail-content">
+            <!-- Customer & Shipping Section -->
+            <div class="detail-section">
+              <h3>Customer & Shipping Details</h3>
+              <div class="detail-grid">
+                <div class="grid-item">
+                  <span class="grid-label">Customer Name:</span>
+                  <span class="grid-val">{{order.shippingFullName || 'N/A'}}</span>
+                </div>
+                <div class="grid-item">
+                  <span class="grid-label">Phone:</span>
+                  <span class="grid-val">{{order.shippingPhone || 'N/A'}}</span>
+                </div>
+                <div class="grid-item full-width">
+                  <span class="grid-label">Shipping Address:</span>
+                  <span class="grid-val">
+                    {{order.shippingAddressLine1}}
+                    <span *ngIf="order.shippingAddressLine2">, {{order.shippingAddressLine2}}</span><br/>
+                    {{order.shippingCity}}, {{order.shippingState}} - {{order.shippingPincode}}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Items Section -->
+            <div class="detail-section">
+              <h3>Order Items ({{order.items.length || 0}})</h3>
+              <div class="items-list">
+                <div class="item-row" *ngFor="let item of order.items">
+                  <img [src]="item.productImageUrl || 'assets/placeholder-product.png'" class="item-img" alt="product">
+                  <div class="item-details">
+                    <span class="item-name">{{item.productName}}</span>
+                    <span class="item-variant" *ngIf="item.variantName">{{item.variantName}}</span>
+                    <span class="item-price">{{item.price | currency:'INR'}} x {{item.quantity}}</span>
+                  </div>
+                  <span class="item-subtotal">{{item.subtotal | currency:'INR'}}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Summary Section -->
+            <div class="detail-section">
+              <h3>Payment & Costs</h3>
+              <div class="summary-box">
+                <div class="summary-row">
+                  <span>Subtotal</span>
+                  <span>{{order.subtotal | currency:'INR'}}</span>
+                </div>
+                <div class="summary-row" *ngIf="order.discountAmount > 0">
+                  <span>Discount <span class="coupon-tag" *ngIf="order.couponCode">({{order.couponCode}})</span></span>
+                  <span class="discount-val">-{{order.discountAmount | currency:'INR'}}</span>
+                </div>
+                <div class="summary-row">
+                  <span>Shipping Cost</span>
+                  <span>{{order.shippingCost | currency:'INR'}}</span>
+                </div>
+                <div class="summary-row">
+                  <span>Tax</span>
+                  <span>{{order.taxAmount | currency:'INR'}}</span>
+                </div>
+                <div class="summary-row total-row">
+                  <span>Total Amount</span>
+                  <span>{{order.totalAmount | currency:'INR'}}</span>
+                </div>
+                <div class="payment-meta">
+                  <div>
+                    <span class="meta-label">Payment Method:</span>
+                    <span class="meta-val">{{order.paymentMethod | uppercase}}</span>
+                  </div>
+                  <div>
+                    <span class="meta-label">Payment Status:</span>
+                    <span class="status-badge status-{{order.paymentStatus.toLowerCase()}}">{{order.paymentStatus}}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Status Management Section -->
+            <div class="detail-section highlight-section">
+              <h3>Update Status</h3>
+              <form (submit)="updateStatus($event)" class="status-form">
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field-half">
+                    <mat-label>Order Status</mat-label>
+                    <mat-select [(ngModel)]="newStatus" name="newStatus" required>
+                      <mat-option value="pending">Pending</mat-option>
+                      <mat-option value="confirmed">Confirmed</mat-option>
+                      <mat-option value="processing">Processing</mat-option>
+                      <mat-option value="shipped">Shipped</mat-option>
+                      <mat-option value="delivered">Delivered</mat-option>
+                      <mat-option value="cancelled">Cancelled</mat-option>
+                      <mat-option value="returned">Returned</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field-half">
+                    <mat-label>Current Location</mat-label>
+                    <input matInput [(ngModel)]="trackingLocation" name="location" placeholder="e.g. Warehouse, In Transit">
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field appearance="outline" class="form-field-full">
+                  <mat-label>Tracking Description / Notes</mat-label>
+                  <textarea matInput [(ngModel)]="trackingDescription" name="description" placeholder="Provide status update details..." rows="2"></textarea>
+                </mat-form-field>
+
+                <div class="form-actions">
+                  <button mat-raised-button color="primary" type="submit" [disabled]="submitting()">
+                    Update Status
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tracking History Section -->
+            <div class="detail-section" *ngIf="order.tracking && order.tracking.length > 0">
+              <h3>Tracking History</h3>
+              <div class="tracking-timeline">
+                <div class="timeline-event" *ngFor="let track of order.tracking">
+                  <div class="event-icon-container">
+                    <mat-icon class="event-icon">radio_button_checked</mat-icon>
+                  </div>
+                  <div class="event-body">
+                    <div class="event-header">
+                      <span class="event-status">{{track.status}}</span>
+                      <span class="event-time">{{track.timestamp | date:'medium'}}</span>
+                    </div>
+                    <p class="event-desc">{{track.description}}</p>
+                    <span class="event-loc" *ngIf="track.location"><mat-icon>place</mat-icon> {{track.location}}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Status Change Popup Modal -->
+    @if (statusUpdateOrder()) {
+      <div class="custom-modal-backdrop" (click)="closeStatusModal()">
+        <div class="custom-modal-content" (click)="$event.stopPropagation()">
+          <h3>Update Status for #{{statusUpdateOrder().orderNumber}}</h3>
+          
+          <div class="form-group">
+            <label>New Status</label>
+            <select class="custom-select" [(ngModel)]="modalStatus">
+              <option value="PENDING">Pending</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="PROCESSING">Processing</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="RETURNED">Returned</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Current Location (Optional)</label>
+            <input type="text" class="custom-input" [(ngModel)]="modalLocation" placeholder="e.g. Warehouse, In Transit">
+          </div>
+
+          <div class="form-group">
+            <label>Notes / Description (Optional)</label>
+            <textarea class="custom-input" [(ngModel)]="modalDescription" placeholder="e.g. Order updated" rows="2"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button mat-button (click)="closeStatusModal()">Cancel</button>
+            <button mat-flat-button color="primary" [disabled]="submitting()" (click)="submitStatusUpdate()">Update Status</button>
+          </div>
+        </div>
+      </div>
+    }
+  `,
+  styles: [`
+    .orders-page { max-width: 1400px; margin: 0 auto; padding: 12px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+    .page-header h1 { margin: 0; font-size: 24px; font-weight: 600; color: #1a237e; }
+    .header-actions { display: flex; gap: 16px; align-items: center; }
+    .search-field { width: 280px; }
+    .filter-field { width: 160px; }
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+    
+    .content-container { display: flex; gap: 24px; align-items: flex-start; }
+    .list-card { flex: 1; min-width: 0; }
+    .table-container { padding: 0 !important; overflow-x: auto; }
+    .orders-table { width: 100%; }
+    th { font-weight: 600; color: rgba(0,0,0,0.7); }
+    td { vertical-align: middle; }
+    
+    .order-number { font-family: monospace; font-size: 13px; font-weight: 600; color: #1a237e; }
+    .customer-name { font-weight: 500; }
+    .selected-row { background-color: rgba(26, 35, 126, 0.05); }
+    .orders-table tr[mat-row]:hover { background-color: rgba(0, 0, 0, 0.03); cursor: pointer; }
+    .orders-table tr.selected-row:hover { background-color: rgba(26, 35, 126, 0.08); }
+
+    .no-records { padding: 24px; text-align: center; color: #757575; font-style: italic; }
+
+    /* Status Badges */
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: capitalize; }
+    .status-badge.pending { background: #fff3e0; color: #e65100; }
+    .status-badge.confirmed { background: #e8f5e9; color: #1b5e20; }
+    .status-badge.processing { background: #e3f2fd; color: #0d47a1; }
+    .status-badge.shipped { background: #f3e5f5; color: #4a148c; }
+    .status-badge.delivered { background: #e8f5e9; color: #2e7d32; }
+    .status-badge.cancelled { background: #ffebee; color: #c62828; }
+    .status-badge.returned { background: #efebe9; color: #4e342e; }
+
+    .status-completed { background: #e8f5e9; color: #2e7d32; }
+    .status-failed { background: #ffebee; color: #c62828; }
+    
+    /* Layout when order is selected */
+    .orders-page.has-selection .content-container { display: grid; grid-template-columns: 55% 45%; }
+    @media (max-width: 992px) {
+      .orders-page.has-selection .content-container { display: flex; flex-direction: column; }
+      .detail-card { width: 100%; }
+    }
+
+    /* Detail Card styles */
+    .detail-card { max-height: 80vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .detail-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 24px 8px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+    .detail-title-group { display: flex; flex-direction: column; }
+    .detail-title-group mat-card-title { font-size: 20px; font-weight: 600; color: #1a237e; }
+    .detail-title-group mat-card-subtitle { font-family: monospace; font-size: 14px; margin-top: 4px; }
+    .close-btn { margin-top: -8px; margin-right: -8px; }
+
+    .detail-content { padding: 16px 24px 24px !important; }
+    .detail-section { margin-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 16px; }
+    .detail-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .detail-section h3 { margin: 0 0 16px; font-size: 15px; font-weight: 600; color: #37474f; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 24px; }
+    .grid-item { display: flex; flex-direction: column; }
+    .grid-item.full-width { grid-column: span 2; }
+    .grid-label { font-size: 12px; color: #757575; font-weight: 500; }
+    .grid-val { font-size: 14px; color: #212121; font-weight: 500; margin-top: 2px; }
+
+    /* Order Items */
+    .items-list { display: flex; flex-direction: column; gap: 12px; }
+    .item-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dashed rgba(0,0,0,0.06); }
+    .item-row:last-child { border-bottom: none; }
+    .item-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; background-color: #f5f5f5; }
+    .item-details { flex: 1; display: flex; flex-direction: column; }
+    .item-name { font-size: 14px; font-weight: 500; color: #212121; }
+    .item-variant { font-size: 12px; color: #757575; }
+    .item-price { font-size: 13px; color: #616161; margin-top: 2px; }
+    .item-subtotal { font-weight: 600; color: #212121; font-size: 14px; }
+
+    /* Summary Box */
+    .summary-box { background: #f8f9fa; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .summary-row { display: flex; justify-content: space-between; font-size: 14px; color: #455a64; }
+    .total-row { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 8px; font-weight: 700; color: #1a237e; font-size: 16px; margin-top: 4px; }
+    .coupon-tag { background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px; }
+    .discount-val { color: #c62828; }
+    .payment-meta { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 12px; margin-top: 8px; display: flex; justify-content: space-between; font-size: 13px; }
+    .meta-label { color: #757575; font-weight: 500; margin-right: 4px; }
+    .meta-val { font-weight: 600; color: #37474f; }
+
+    /* Highlight Section for editing status */
+    .highlight-section { background: rgba(26, 35, 126, 0.02); border: 1px solid rgba(26, 35, 126, 0.08); border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+    .status-form { display: flex; flex-direction: column; gap: 12px; }
+    .form-row { display: flex; gap: 16px; }
+    .form-field-half { flex: 1; }
+    .form-field-full { width: 100%; }
+    .status-form ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+    .form-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+
+    /* Timeline */
+    .tracking-timeline { display: flex; flex-direction: column; gap: 16px; padding-left: 8px; margin-top: 8px; }
+    .timeline-event { display: flex; gap: 12px; position: relative; }
+    .timeline-event::after { content: ''; position: absolute; left: 11px; top: 24px; bottom: -20px; width: 2px; background: rgba(0,0,0,0.08); }
+    .timeline-event:last-child::after { display: none; }
+    .event-icon-container { width: 24px; display: flex; justify-content: center; z-index: 1; }
+    .event-icon { font-size: 16px; width: 16px; height: 16px; color: #1a237e; background: #white; }
+    .event-body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .event-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .event-status { font-weight: 600; font-size: 14px; text-transform: capitalize; color: #212121; }
+    .event-time { font-size: 11px; color: #757575; }
+    .event-desc { margin: 0; font-size: 13px; color: #616161; line-height: 1.4; }
+    .event-loc { font-size: 12px; color: #757575; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+    .event-loc mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+    /* Custom Modal CSS */
+    .custom-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .custom-modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .custom-modal-content h3 {
+      margin: 0 0 20px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a237e;
+    }
+    .form-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .custom-select, .custom-input {
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .custom-select:focus, .custom-input:focus {
+      border-color: #1a237e;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  `]
+})
+export class AdminOrdersComponent implements OnInit {
+  apiData = inject(ApiDataService);
+  snackBar = inject(MatSnackBar);
+
+  orders = signal<Order[]>([]);
+  filteredOrders = signal<Order[]>([]);
+  selectedOrder = signal<Order | null>(null);
+
+  searchQuery = '';
+  statusFilter = '';
+  displayedColumns = ['orderNumber', 'customer', 'date', 'total', 'status', 'actions'];
+
+  // Update Status Form properties
+  newStatus = '';
+  trackingLocation = '';
+  trackingDescription = '';
+  submitting = signal(false);
+
+  // Status modal signals/variables
+  statusUpdateOrder = signal<any | null>(null);
+  modalStatus = '';
+  modalLocation = '';
+  modalDescription = '';
+
+  ngOnInit(): void {
+    this.loadOrders();
+  }
+
+  loadOrders(): void {
+    this.apiData.getAdminOrders().subscribe({
+      next: (data) => {
+        // Sort orders descending by ID or date so latest is first
+        const sorted = data.sort((a, b) => Number(b.id) - Number(a.id));
+        this.orders.set(sorted);
+        this.applyFilter();
+        
+        // If we have a selected order, update its reference in case data refreshed
+        const currentSelected = this.selectedOrder();
+        if (currentSelected) {
+          const updated = sorted.find(o => o.id === currentSelected.id);
+          if (updated) {
+            this.selectedOrder.set(updated);
+          }
+        }
+      },
+      error: () => {
+        this.snackBar.open('Failed to load orders', 'Close', { duration: 3000 });
+      }
+    });
+  }
+
+  applyFilter(): void {
+    let result = this.orders();
+
+    if (this.statusFilter) {
+      result = result.filter(o => o.status?.toLowerCase() === this.statusFilter.toLowerCase());
+    }
+
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase().trim();
+      result = result.filter(o => 
+        o.orderNumber?.toLowerCase().includes(q) ||
+        String(o.id).includes(q) ||
+        (o as any).shippingFullName?.toLowerCase().includes(q) ||
+        (o as any).shippingPhone?.includes(q)
+      );
+    }
+
+    this.filteredOrders.set(result);
+  }
+
+  selectOrder(order: Order): void {
+    this.selectedOrder.set(order);
+    this.newStatus = order.status;
+    this.trackingLocation = '';
+    this.trackingDescription = '';
+  }
+
+  closeDetail(): void {
+    this.selectedOrder.set(null);
+  }
+
+  updateStatus(event: Event): void {
+    event.preventDefault();
+    const order = this.selectedOrder();
+    if (!order) return;
+
+    this.submitting.set(true);
+    this.apiData.updateAdminOrderStatus(
+      Number(order.id),
+      this.newStatus,
+      this.trackingDescription || `Order status updated to ${this.newStatus}`,
+      this.trackingLocation
+    ).subscribe({
+      next: (updatedOrder) => {
+        this.snackBar.open('Order status updated successfully', 'Close', { duration: 3000 });
+        this.submitting.set(false);
+        this.trackingDescription = '';
+        this.trackingLocation = '';
+        this.loadOrders();
+      },
+      error: () => {
+        this.snackBar.open('Failed to update order status', 'Close', { duration: 3000 });
+        this.submitting.set(false);
+      }
+    });
+  }
+
+  openStatusModal(order: any): void {
+    this.statusUpdateOrder.set(order);
+    this.modalStatus = order.status?.toUpperCase() || 'PENDING';
+    this.modalLocation = '';
+    this.modalDescription = '';
+  }
+
+  closeStatusModal(): void {
+    this.statusUpdateOrder.set(null);
+  }
+
+  submitStatusUpdate(): void {
+    const order = this.statusUpdateOrder();
+    if (!order) return;
+
+    this.submitting.set(true);
+    this.apiData.updateAdminOrderStatus(
+      Number(order.id),
+      this.modalStatus,
+      this.modalDescription || `Order status updated to ${this.modalStatus} by admin`,
+      this.modalLocation
+    ).subscribe({
+      next: () => {
+        this.snackBar.open('Order status updated successfully', 'Close', { duration: 3000 });
+        this.submitting.set(false);
+        this.closeStatusModal();
+        this.loadOrders();
+      },
+      error: () => {
+        this.snackBar.open('Failed to update order status', 'Close', { duration: 3000 });
+        this.submitting.set(false);
+      }
+    });
+  }
+}

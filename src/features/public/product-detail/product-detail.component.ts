@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,11 +12,10 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
 import { FormsModule } from '@angular/forms';
-import { DataService } from '../../../core/services/data.service';
+import { ApiDataService, Product, ProductVariant, Review, ProductPreview, Category, Vendor } from '../../../core/services/api-data.service';
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Product, ProductVariant, ProductReview } from '../../../core/models';
 
 @Component({
   selector: 'app-product-detail',
@@ -25,69 +24,94 @@ import { Product, ProductVariant, ProductReview } from '../../../core/models';
   templateUrl: './product-detail.component.html',
   styleUrl: './product-detail.component.scss'
 })
-export class ProductDetailComponent {
+export class ProductDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private location = inject(Location);
-  private dataService = inject(DataService);
+  private apiData = inject(ApiDataService);
   private cart = inject(CartService);
   private wishlist = inject(WishlistService);
   private auth = inject(AuthService);
   private snackBar = inject(MatSnackBar);
 
+  product = signal<Product | null>(null);
+  vendor = signal<Vendor | null>(null);
+  category = signal<Category | null>(null);
+  reviews = signal<Review[]>([]);
+  relatedProducts = signal<ProductPreview[]>([]);
+
   selectedImage = signal<string>('');
   selectedVariant = signal<ProductVariant | null>(null);
   quantity = signal(1);
 
-  product: Product | undefined;
+  primaryImage = computed(() => {
+    const prod = this.product();
+    return this.selectedImage() || prod?.images.find(img => img.isPrimary)?.url ||
+      prod?.images[0]?.url || '';
+  });
 
-  get primaryImage(): string {
-    return this.selectedImage() || this.product?.images.find(img => img.isPrimary)?.url ||
-      this.product?.images[0]?.url || '';
-  }
+  images = computed(() => this.product()?.images.map(img => img.url) || []);
 
-  get images(): string[] {
-    return this.product?.images.map(img => img.url) || [];
-  }
-
-  get vendor() {
-    return this.product ? this.dataService.getVendorById(this.product.vendorId) : null;
-  }
-
-  get category() {
-    return this.product ? this.dataService.getCategoryById(this.product.categoryId) : null;
-  }
-
-  get reviews(): ProductReview[] {
-    return this.product ? this.dataService.getReviewsForProduct(this.product.id) : [];
-  }
-
-  get relatedProducts() {
-    return this.product ? this.dataService.getProductsByCategory(this.product.categoryId).filter(p => p.id !== this.product?.id).slice(0, 4) : [];
-  }
-
-  get discount(): number {
+  discount = computed(() => {
     const variant = this.selectedVariant();
     if (variant?.comparePrice) {
       return Math.round(((variant.comparePrice - variant.price) / variant.comparePrice) * 100);
     }
     return 0;
-  }
+  });
 
-  get totalPrice(): number {
+  totalPrice = computed(() => {
     const variant = this.selectedVariant();
     return variant ? variant.price * this.quantity() : 0;
+  });
+
+  ngOnInit(): void {
+    const slug = this.route.snapshot.paramMap.get('slug');
+    if (!slug) return;
+
+    this.apiData.getProductBySlug(slug).subscribe({
+      next: (prod) => {
+        this.product.set(prod);
+        this.selectedImage.set(prod.images[0]?.url || '');
+        this.selectedVariant.set(prod.variants[0] || null);
+        this.loadVendor(prod.vendorId);
+        this.loadCategory(prod.categoryId);
+        this.loadReviews(prod.id);
+        this.loadRelatedProducts(prod.id);
+      },
+      error: () => this.product.set(null)
+    });
   }
 
-  constructor() {
-    const slug = this.route.snapshot.paramMap.get('slug');
-    if (slug) {
-      this.product = this.dataService.getProductById(slug.replace('product-', ''));
-    }
-    if (this.product) {
-      this.selectedImage.set(this.product.images[0]?.url || '');
-      this.selectedVariant.set(this.product.variants[0] || null);
-    }
+  private loadVendor(vendorId: number): void {
+    this.apiData.getVendorById(vendorId).subscribe({
+      next: (v) => this.vendor.set(v),
+      error: () => this.vendor.set(null)
+    });
+  }
+
+  private loadCategory(categoryId: number): void {
+    this.apiData.getCategories().subscribe({
+      next: (cats) => {
+        const cat = cats.find(c => c.id === categoryId);
+        this.category.set(cat || null);
+      },
+      error: () => this.category.set(null)
+    });
+  }
+
+  private loadReviews(productId: number): void {
+    this.apiData.getReviewsForProduct(productId).subscribe({
+      next: (revs) => this.reviews.set(revs),
+      error: () => this.reviews.set([])
+    });
+  }
+
+  private loadRelatedProducts(productId: number): void {
+    this.apiData.getRelatedProducts(productId).subscribe({
+      next: (prods) => this.relatedProducts.set(prods.slice(0, 4)),
+      error: () => this.relatedProducts.set([])
+    });
   }
 
   selectImage(url: string): void {
@@ -106,27 +130,71 @@ export class ProductDetailComponent {
 
   addToCart(): void {
     const variant = this.selectedVariant();
-    if (this.product && variant) {
-      this.cart.addToCart(this.product.id, variant.id, this.quantity());
-      this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 });
+    const prod = this.product();
+    if (!prod || !variant) return;
+
+    if (!this.auth.isAuthenticated()) {
+      localStorage.setItem('pending_action', JSON.stringify({
+        type: 'addToCart',
+        productId: prod.id,
+        variantId: variant.id,
+        quantity: this.quantity()
+      }));
+      this.router.navigate(['/auth/login'], {
+        queryParams: { role: 'customer', redirectTo: this.router.url }
+      });
+      return;
     }
+
+    this.cart.addToCart(prod.id, variant.id, this.quantity());
+    this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 });
   }
 
   buyNow(): void {
+    if (!this.auth.isAuthenticated()) {
+      const variant = this.selectedVariant();
+      const prod = this.product();
+      if (prod && variant) {
+        localStorage.setItem('pending_action', JSON.stringify({
+          type: 'addToCart',
+          productId: prod.id,
+          variantId: variant.id,
+          quantity: this.quantity()
+        }));
+      }
+      this.router.navigate(['/auth/login'], {
+        queryParams: { role: 'customer', redirectTo: '/checkout' }
+      });
+      return;
+    }
     this.addToCart();
     this.router.navigate(['/checkout']);
   }
 
   toggleWishlist(): void {
-    if (this.product) {
-      this.wishlist.toggleWishlist(this.product.id);
-      const message = this.wishlist.isInWishlist(this.product.id) ? 'Added to wishlist' : 'Removed from wishlist';
-      this.snackBar.open(message, 'Close', { duration: 2000 });
+    const prod = this.product();
+    if (!prod) return;
+
+    if (!this.auth.isAuthenticated()) {
+      localStorage.setItem('pending_action', JSON.stringify({
+        type: 'toggleWishlist',
+        productId: prod.id
+      }));
+      this.router.navigate(['/auth/login'], {
+        queryParams: { role: 'customer', redirectTo: this.router.url }
+      });
+      return;
     }
+
+    this.wishlist.toggleWishlist(prod.id).then(() => {
+      const message = this.wishlist.isInWishlist(prod.id) ? 'Added to wishlist' : 'Removed from wishlist';
+      this.snackBar.open(message, 'Close', { duration: 2000 });
+    });
   }
 
   isInWishlist(): boolean {
-    return this.product ? this.wishlist.isInWishlist(this.product.id) : false;
+    const prod = this.product();
+    return prod ? this.wishlist.isInWishlist(prod.id) : false;
   }
 
   goBack(): void {

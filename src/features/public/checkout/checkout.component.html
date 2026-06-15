@@ -15,6 +15,21 @@
             </mat-card-title>
           </mat-card-header>
           <mat-card-content>
+            @if (savedAddresses().length > 0) {
+              <div class="saved-addresses-selector" style="margin-bottom: 20px;">
+                <mat-form-field appearance="outline" style="width: 100%;">
+                  <mat-label>Select Saved Address</mat-label>
+                  <mat-select (selectionChange)="onAddressSelect($event.value)" [value]="selectedAddress()">
+                    @for (addr of savedAddresses(); track addr.id) {
+                      <mat-option [value]="addr">
+                        {{addr.fullName}} - {{addr.addressLine1}}, {{addr.city}} ({{addr.type}})
+                      </mat-option>
+                    }
+                    <mat-option [value]="null">-- Enter New Address --</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            }
             <form [formGroup]="addressForm">
               <div class="form-row">
                 <mat-form-field appearance="outline">
@@ -59,63 +74,15 @@
           <mat-card-header>
             <mat-card-title>
               <span class="step-number">2</span>
-              Payment Method
+              Payment
             </mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <div class="payment-options">
-              <label class="payment-option" [class.selected]="selectedPayment() === 'card'">
-                <input type="radio" name="payment" value="card" [checked]="selectedPayment() === 'card'" (change)="selectedPayment.set('card')">
-                <mat-icon>credit_card</mat-icon>
-                <span>Credit/Debit Card</span>
-              </label>
-              <label class="payment-option" [class.selected]="selectedPayment() === 'upi'">
-                <input type="radio" name="payment" value="upi" (change)="selectedPayment.set('upi')">
-                <mat-icon>phone_android</mat-icon>
-                <span>UPI</span>
-              </label>
-              <label class="payment-option" [class.selected]="selectedPayment() === 'netbanking'">
-                <input type="radio" name="payment" value="netbanking" (change)="selectedPayment.set('netbanking')">
-                <mat-icon>account_balance</mat-icon>
-                <span>Net Banking</span>
-              </label>
-              <label class="payment-option" [class.selected]="selectedPayment() === 'wallet'">
-                <input type="radio" name="payment" value="wallet" (change)="selectedPayment.set('wallet')">
-                <mat-icon>account_balance_wallet</mat-icon>
-                <span>Wallet</span>
-              </label>
-              <label class="payment-option" [class.selected]="selectedPayment() === 'cod'">
-                <input type="radio" name="payment" value="cod" (change)="selectedPayment.set('cod')">
-                <mat-icon>payments</mat-icon>
-                <span>Cash on Delivery</span>
-              </label>
+            <div class="razorpay-section">
+              <mat-icon class="secure-icon">lock</mat-icon>
+              <p>Secure payment powered by Razorpay</p>
+              <p class="payment-note">Your payment is processed securely. We accept all major payment methods via Razorpay.</p>
             </div>
-
-            @if (selectedPayment() === 'card') {
-              <form [formGroup]="paymentForm" class="payment-form">
-                <mat-form-field appearance="outline">
-                  <mat-label>Card Number</mat-label>
-                  <input matInput formControlName="cardNumber" placeholder="1234 5678 9012 3456">
-                  <mat-icon matPrefix>credit_card</mat-icon>
-                </mat-form-field>
-                <div class="form-row">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Expiry Date</mat-label>
-                    <input matInput formControlName="cardExpiry" placeholder="MM/YY">
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>CVV</mat-label>
-                    <input matInput type="password" formControlName="cardCvv" placeholder="***">
-                  </mat-form-field>
-                </div>
-              </form>
-            } @else if (selectedPayment() === 'upi') {
-              <mat-form-field appearance="outline" class="payment-form">
-                <mat-label>UPI ID</mat-label>
-                <input matInput placeholder="yourname@upi">
-                <mat-icon matPrefix>phone_android</mat-icon>
-              </mat-form-field>
-            }
           </mat-card-content>
         </mat-card>
       </div>
@@ -127,11 +94,11 @@
           </mat-card-header>
           <mat-card-content>
             <div class="summary-items">
-              @for (item of cart.itemsWithDetails(); track item.product.id) {
+              @for (item of cart.itemsWithDetails(); track item.id) {
                 <div class="summary-item">
-                  <img [src]="item.product.images[0]?.url" [alt]="item.product.name">
+                  <img [src]="item.productImageUrl" [alt]="item.productName">
                   <div class="item-info">
-                    <p>{{item.product.name}}</p>
+                    <p>{{item.productName}}</p>
                     <span>x {{item.quantity}}</span>
                   </div>
                   <span class="item-price">INR {{item.subtotal | number:'1.0-0'}}</span>
@@ -156,6 +123,30 @@
               <span>Tax (18%)</span>
               <span>INR {{tax() | number:'1.0-0'}}</span>
             </div>
+            @if (discount() > 0) {
+              <div class="summary-row discount">
+                <span>Discount ({{appliedCoupon()}})</span>
+                <span>-INR {{discount() | number:'1.0-0'}}</span>
+              </div>
+            }
+
+            <mat-divider></mat-divider>
+
+            <div class="coupon-section">
+              @if (!appliedCoupon()) {
+                <mat-form-field appearance="outline">
+                  <mat-label>Coupon Code</mat-label>
+                  <input matInput [(ngModel)]="couponCode" name="couponCode">
+                  <button matSuffix mat-button color="primary" (click)="applyCoupon()">Apply</button>
+                </mat-form-field>
+              } @else {
+                <div class="applied-coupon">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Coupon {{appliedCoupon()}} applied</span>
+                  <button mat-button (click)="removeCoupon()">Remove</button>
+                </div>
+              }
+            </div>
 
             <mat-divider></mat-divider>
 
@@ -164,12 +155,8 @@
               <span>INR {{total() | number:'1.0-0'}}</span>
             </div>
 
-            <button mat-raised-button color="primary" class="place-order-btn" (click)="processOrder()" [disabled]="addressForm.invalid || orderProcessing()">
-              @if (orderProcessing()) {
-                <span>Processing...</span>
-              } @else {
-                <mat-icon>lock</mat-icon> Place Order
-              }
+            <button mat-raised-button color="primary" class="place-order-btn" (click)="initiatePayment()" [disabled]="addressForm.invalid || orderProcessing()">
+              <mat-icon>lock</mat-icon> {{ orderProcessing() ? 'Processing...' : 'Pay with Razorpay' }}
             </button>
 
             <p class="secure-note"><mat-icon>verified_user</mat-icon> Secure checkout powered by SSL encryption</p>
@@ -179,10 +166,100 @@
     </div>
   } @else {
     <div class="order-success">
-      <mat-icon class="success-icon">check_circle</mat-icon>
-      <h1>Order Placed Successfully!</h1>
-      <p>Thank you for your order. Your order ID is <strong>{{orderId()}}</strong></p>
-      <p>We'll send you a confirmation email with tracking details.</p>
+      <div class="success-header">
+        <mat-icon class="success-icon">check_circle</mat-icon>
+        <h1>Order Placed Successfully!</h1>
+        <p>Thank you for your order. Your order ID is <strong>{{orderId()}}</strong></p>
+        <p>We've received your payment and are processing your order.</p>
+      </div>
+
+      @if (placedOrder()) {
+        <div class="order-details-container">
+          <div class="details-left">
+            <mat-card class="details-card">
+              <mat-card-header>
+                <mat-card-title>Order Items</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="items-list">
+                  @for (item of placedOrder().items; track item.id) {
+                    <div class="item-row">
+                      <img [src]="item.productImageUrl" [alt]="item.productName">
+                      <div class="item-name-info">
+                        <h4>{{item.productName}}</h4>
+                        <span class="variant">{{item.variantName}}</span>
+                      </div>
+                      <div class="item-qty-price">
+                        <span>{{item.quantity}} x INR {{item.price | number:'1.0-0'}}</span>
+                        <strong>INR {{item.subtotal | number:'1.0-0'}}</strong>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="details-card">
+              <mat-card-header>
+                <mat-card-title>Shipping Address</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="shipping-info">
+                  <p><strong>{{placedOrder().shippingFullName}}</strong></p>
+                  <p>{{placedOrder().shippingAddressLine1}}</p>
+                  @if (placedOrder().shippingAddressLine2) {
+                    <p>{{placedOrder().shippingAddressLine2}}</p>
+                  }
+                  <p>{{placedOrder().shippingCity}}, {{placedOrder().shippingState}} - {{placedOrder().shippingPincode}}</p>
+                  <p class="phone"><mat-icon>phone</mat-icon> {{placedOrder().shippingPhone}}</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <div class="details-right">
+            <mat-card class="details-card">
+              <mat-card-header>
+                <mat-card-title>Payment & Billing</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="billing-summary">
+                  <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>INR {{placedOrder().subtotal | number:'1.0-0'}}</span>
+                  </div>
+                  @if (placedOrder().discountAmount > 0) {
+                    <div class="summary-row discount">
+                      <span>Discount @if(placedOrder().couponCode){({{placedOrder().couponCode}})}</span>
+                      <span>-INR {{placedOrder().discountAmount | number:'1.0-0'}}</span>
+                    </div>
+                  }
+                  <div class="summary-row">
+                    <span>Shipping</span>
+                    <span>
+                      @if (placedOrder().shippingCost === 0) { <span class="free">FREE</span> }
+                      @else { INR {{placedOrder().shippingCost}} }
+                    </span>
+                  </div>
+                  <div class="summary-row">
+                    <span>Tax</span>
+                    <span>INR {{placedOrder().taxAmount | number:'1.0-0'}}</span>
+                  </div>
+                  <mat-divider></mat-divider>
+                  <div class="summary-row total">
+                    <span>Total Paid</span>
+                    <span>INR {{placedOrder().totalAmount | number:'1.0-0'}}</span>
+                  </div>
+                  <div class="payment-method-badge">
+                    <mat-icon>credit_card</mat-icon> Paid via {{placedOrder().paymentMethod}}
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      }
+
       <div class="actions">
         <button mat-raised-button color="primary" (click)="viewOrders()">View Orders</button>
         <button mat-stroked-button routerLink="/">Continue Shopping</button>

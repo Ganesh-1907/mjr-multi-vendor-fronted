@@ -1,10 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
-import { DataService } from '../../../core/services/data.service';
+import { ApiDataService, Order } from '../../../core/services/api-data.service';
 
 @Component({
   selector: 'app-admin-reports',
@@ -16,25 +16,25 @@ import { DataService } from '../../../core/services/data.service';
       <div class="stats-grid">
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>payments</mat-icon><div>
-            <span class="stat-value">{{totalRevenue | currency:'INR'}}</span>
+            <span class="stat-value">{{totalRevenue() | currency:'INR'}}</span>
             <span class="stat-label">Total Revenue</span>
           </div></div>
         </mat-card-content></mat-card>
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>shopping_cart</mat-icon><div>
-            <span class="stat-value">{{orders.length}}</span>
+            <span class="stat-value">{{orderCount()}}</span>
             <span class="stat-label">Total Orders</span>
           </div></div>
         </mat-card-content></mat-card>
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>trending_up</mat-icon><div>
-            <span class="stat-value">{{avgOrderValue | currency:'INR'}}</span>
+            <span class="stat-value">{{avgOrderValue() | currency:'INR'}}</span>
             <span class="stat-label">Avg Order Value</span>
           </div></div>
         </mat-card-content></mat-card>
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>users</mat-icon><div>
-            <span class="stat-value">{{customers.length}}</span>
+            <span class="stat-value">{{customerCount()}}</span>
             <span class="stat-label">Total Customers</span>
           </div></div>
         </mat-card-content></mat-card>
@@ -43,7 +43,7 @@ import { DataService } from '../../../core/services/data.service';
         <mat-card-header><mat-card-title>Revenue by Month</mat-card-title></mat-card-header>
         <mat-card-content>
           <div class="chart-bars">
-            @for (month of monthlyData; track month.name) {
+            @for (month of monthlyData(); track month.name) {
               <div class="bar-item">
                 <div class="bar" [style.height.%]="month.percentage"></div>
                 <span class="label">{{month.name}}</span>
@@ -80,14 +80,26 @@ import { DataService } from '../../../core/services/data.service';
     .export-buttons button { display: flex; align-items: center; gap: 8px; }
   `]
 })
-export class AdminReportsComponent {
-  dataService = inject(DataService);
-  customers = this.dataService.getCustomers();
-  orders = this.dataService.getOrders();
-  totalRevenue = this.orders.reduce((sum, o) => sum + o.total, 0);
-  avgOrderValue = this.orders.length ? this.totalRevenue / this.orders.length : 0;
-  monthlyData = [
+export class AdminReportsComponent implements OnInit {
+  apiDataService = inject(ApiDataService);
+
+  dashboard = signal<any>({});
+  orders = signal<Order[]>([]);
+  totalRevenue = computed(() => this.orders().reduce((sum, o) => sum + o.totalAmount, 0));
+  orderCount = computed(() => this.orders().length);
+  avgOrderValue = computed(() => this.orders().length ? this.totalRevenue() / this.orders().length : 0);
+  customerCount = signal(0);
+  monthlyData = signal([
     { name: 'Jan', percentage: 45 }, { name: 'Feb', percentage: 60 }, { name: 'Mar', percentage: 55 },
     { name: 'Apr', percentage: 70 }, { name: 'May', percentage: 80 }, { name: 'Jun', percentage: 90 }
-  ];
+  ]);
+
+  ngOnInit(): void {
+    this.apiDataService.getAdminDashboard().subscribe(data => {
+      this.dashboard.set(data);
+      if (data?.totalCustomers) this.customerCount.set(data.totalCustomers);
+      if (data?.monthlyRevenue) this.monthlyData.set(data.monthlyRevenue);
+    });
+    this.apiDataService.getOrders().subscribe(data => this.orders.set(data));
+  }
 }

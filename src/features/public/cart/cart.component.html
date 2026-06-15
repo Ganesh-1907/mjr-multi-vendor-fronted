@@ -7,30 +7,30 @@
   @if (cart.hasItems()) {
     <div class="cart-container">
       <div class="cart-items">
-        @for (item of cart.itemsWithDetails(); track item.product.id + item.variant.id) {
+        @for (item of cart.itemsWithDetails(); track item.id) {
           <mat-card class="cart-item">
             <div class="item-image">
-              <img [src]="item.product.images[0]?.url" [alt]="item.product.name">
+              <img [src]="item.productImageUrl" [alt]="item.productName">
             </div>
             <div class="item-details">
-              <h3>{{item.product.name}}</h3>
-              <p class="variant">{{item.variant.name}}</p>
-              <p class="vendor">Sold by: {{dataService.getVendorById(item.product.vendorId)?.storeName}}</p>
-              <div class="item-price">INR {{item.variant.price | number:'1.0-0'}}</div>
+              <h3>{{item.productName}}</h3>
+              <p class="variant">{{item.variantName}}</p>
+              <p class="vendor">Sold by: {{cart.getVendorById(item.vendorId!)}}</p>
+              <div class="item-price">INR {{item.price | number:'1.0-0'}}</div>
             </div>
             <div class="item-quantity">
-              <button mat-icon-button (click)="updateQuantity(item.product.id, item.variant.id, item.quantity - 1)" [disabled]="item.quantity <= 1">
+              <button mat-icon-button (click)="updateQuantity(item.id, item.quantity - 1)" [disabled]="item.quantity <= 1">
                 <mat-icon>remove</mat-icon>
               </button>
               <span>{{item.quantity}}</span>
-              <button mat-icon-button (click)="updateQuantity(item.product.id, item.variant.id, item.quantity + 1)" [disabled]="item.quantity >= item.variant.stock">
+              <button mat-icon-button (click)="updateQuantity(item.id, item.quantity + 1)" [disabled]="item.quantity >= item.stockQuantity">
                 <mat-icon>add</mat-icon>
               </button>
             </div>
             <div class="item-total">
               INR {{item.subtotal | number:'1.0-0'}}
             </div>
-            <button mat-icon-button class="remove-btn" (click)="removeItem(item.product.id, item.variant.id)">
+            <button mat-icon-button class="remove-btn" (click)="removeItem(item.id)">
               <mat-icon>delete_outline</mat-icon>
             </button>
           </mat-card>
@@ -65,34 +65,12 @@
               <span>Tax (18%)</span>
               <span>INR {{tax() | number:'1.0-0'}}</span>
             </div>
-            @if (discount > 0) {
-              <div class="summary-row discount">
-                <span>Discount ({{appliedCoupon}})</span>
-                <span>-INR {{discount | number:'1.0-0'}}</span>
-              </div>
-            }
 
             <mat-divider></mat-divider>
 
             <div class="summary-row total">
               <span>Total</span>
               <span>INR {{total() | number:'1.0-0'}}</span>
-            </div>
-
-            <div class="coupon-section">
-              @if (!appliedCoupon) {
-                <mat-form-field appearance="outline">
-                  <mat-label>Coupon Code</mat-label>
-                  <input matInput [(ngModel)]="couponCode">
-                  <button matSuffix mat-button color="primary" (click)="applyCoupon()">Apply</button>
-                </mat-form-field>
-              } @else {
-                <div class="applied-coupon">
-                  <mat-icon>check_circle</mat-icon>
-                  <span>Coupon {{appliedCoupon}} applied</span>
-                  <button mat-button (click)="removeCoupon()">Remove</button>
-                </div>
-              }
             </div>
 
             <button mat-raised-button color="primary" class="checkout-btn" (click)="checkout()">

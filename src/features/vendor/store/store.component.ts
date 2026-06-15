@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
-import { DataService } from '../../../core/services/data.service';
+import { ApiDataService } from '../../../core/services/api-data.service';
 
 @Component({
   selector: 'app-vendor-store',
@@ -81,29 +81,61 @@ import { DataService } from '../../../core/services/data.service';
     @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
   `]
 })
-export class StoreComponent {
+export class StoreComponent implements OnInit {
   auth = inject(AuthService);
-  dataService = inject(DataService);
+  apiDataService = inject(ApiDataService);
   fb = inject(FormBuilder);
   snackBar = inject(MatSnackBar);
 
-  vendor = this.dataService.getVendorById(this.auth.currentUser()?.id || '');
+  vendor = signal<any>({});
 
   storeForm: FormGroup = this.fb.group({
-    storeName: [this.vendor?.storeName || '', Validators.required],
-    storeDescription: [this.vendor?.storeDescription || ''],
-    businessEmail: [this.vendor?.businessEmail || '', [Validators.required, Validators.email]],
-    businessPhone: [this.vendor?.businessPhone || '', Validators.required],
-    gstNumber: [this.vendor?.gstNumber || ''],
-    panNumber: [this.vendor?.panNumber || '']
+    storeName: ['', Validators.required],
+    storeDescription: [''],
+    businessEmail: ['', [Validators.required, Validators.email]],
+    businessPhone: ['', Validators.required],
+    gstNumber: [''],
+    panNumber: ['']
   });
 
   bankForm: FormGroup = this.fb.group({
-    bankName: [this.vendor?.bankName || '', Validators.required],
-    bankAccountNo: [this.vendor?.bankAccountNo || '', Validators.required],
-    bankIfsc: [this.vendor?.bankIfsc || '', Validators.required]
+    bankName: ['', Validators.required],
+    bankAccountNo: ['', Validators.required],
+    bankIfsc: ['', Validators.required]
   });
 
-  saveStore(): void { this.snackBar.open('Store information updated!', 'Close', { duration: 3000 }); }
-  saveBank(): void { this.snackBar.open('Bank details updated!', 'Close', { duration: 3000 }); }
+  ngOnInit(): void {
+    this.apiDataService.getProfile().subscribe(profile => {
+      this.vendor.set(profile);
+      this.storeForm.patchValue({
+        storeName: profile.storeName || '',
+        storeDescription: profile.storeDescription || '',
+        businessEmail: profile.businessEmail || '',
+        businessPhone: profile.businessPhone || '',
+        gstNumber: profile.gstNumber || '',
+        panNumber: profile.panNumber || ''
+      });
+      this.bankForm.patchValue({
+        bankName: profile.bankName || '',
+        bankAccountNo: profile.bankAccountNo || '',
+        bankIfsc: profile.bankIfsc || ''
+      });
+    });
+  }
+
+  saveStore(): void {
+    if (this.storeForm.valid) {
+      this.apiDataService.updateProfile(this.storeForm.value).subscribe(() => {
+        this.snackBar.open('Store information updated!', 'Close', { duration: 3000 });
+      });
+    }
+  }
+
+  saveBank(): void {
+    if (this.bankForm.valid) {
+      this.apiDataService.updateProfile(this.bankForm.value).subscribe(() => {
+        this.snackBar.open('Bank details updated!', 'Close', { duration: 3000 });
+      });
+    }
+  }
 }

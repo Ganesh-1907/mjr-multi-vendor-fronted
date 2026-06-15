@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ApiDataService } from '../../../core/services/api-data.service';
 
 @Component({
   selector: 'app-support',
@@ -33,7 +34,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 <textarea matInput rows="5" formControlName="message"></textarea>
                 <mat-icon matPrefix>message</mat-icon>
               </mat-form-field>
-              <button mat-raised-button color="primary" type="submit" [disabled]="ticketForm.invalid">Submit Ticket</button>
+              <button mat-raised-button color="primary" type="submit" [disabled]="ticketForm.invalid || submitting()">Submit Ticket</button>
             </form>
           </mat-card-content>
         </mat-card>
@@ -64,12 +65,40 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     @media (max-width: 768px) { .support-grid { grid-template-columns: 1fr; } }
   `]
 })
-export class SupportComponent {
+export class SupportComponent implements OnInit {
   fb = inject(FormBuilder);
   snackBar = inject(MatSnackBar);
-  ticketForm: FormGroup = this.fb.group({ subject: ['', Validators.required], message: ['', Validators.required] });
+  apiData = inject(ApiDataService);
+
+  ticketForm: FormGroup = this.fb.group({
+    subject: ['', Validators.required],
+    message: ['', Validators.required]
+  });
+
+  tickets = signal<any[]>([]);
+  submitting = signal(false);
+
+  ngOnInit(): void {
+    this.apiData.getTickets().subscribe(data => this.tickets.set(data));
+  }
+
   submitTicket(): void {
-    this.snackBar.open('Ticket submitted successfully!', 'Close', { duration: 3000 });
-    this.ticketForm.reset();
+    if (this.ticketForm.invalid) return;
+    this.submitting.set(true);
+    this.apiData.createTicket({
+      subject: this.ticketForm.value.subject,
+      message: this.ticketForm.value.message
+    }).subscribe({
+      next: () => {
+        this.snackBar.open('Ticket submitted successfully!', 'Close', { duration: 3000 });
+        this.ticketForm.reset();
+        this.submitting.set(false);
+        this.apiData.getTickets().subscribe(data => this.tickets.set(data));
+      },
+      error: () => {
+        this.snackBar.open('Failed to submit ticket. Please try again.', 'Close', { duration: 3000 });
+        this.submitting.set(false);
+      }
+    });
   }
 }

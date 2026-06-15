@@ -1,15 +1,18 @@
 <section class="hero-section">
-  @if (banners.length > 0) {
-    <div class="banner-carousel">
+  @if (heroBanners().length > 0) {
+    <div class="banner-carousel" (mouseenter)="stopAutoplay()" (mouseleave)="startAutoplay()">
       <div class="banner-track" [style.transform]="'translateX(-' + (currentBanner * 100) + '%)'">
-        @for (banner of banners; track banner.id) {
-          <div class="banner-slide" [style.backgroundImage]="'url(' + banner.image + ')'">
+        @for (banner of heroBanners(); track banner.id) {
+          <div class="banner-slide" [style.backgroundImage]="'url(' + banner.imageUrl + ')'">
+            <div class="banner-overlay"></div>
             <div class="banner-content">
+              <span class="banner-tag">Exclusive Offer</span>
               <h1>{{banner.title}}</h1>
               <p>{{banner.subtitle}}</p>
               @if (banner.buttonText) {
-                <a mat-raised-button color="primary" [routerLink]="banner.link">
+                <a mat-flat-button class="banner-btn" [routerLink]="banner.linkUrl">
                   {{banner.buttonText}}
+                  <mat-icon>arrow_forward</mat-icon>
                 </a>
               }
             </div>
@@ -23,78 +26,372 @@
         <mat-icon>chevron_right</mat-icon>
       </button>
       <div class="banner-dots">
-        @for (banner of banners; track banner.id; let i = $index) {
+        @for (banner of heroBanners(); track banner.id; let i = $index) {
           <button class="dot" [class.active]="i === currentBanner" (click)="selectBanner(i)"></button>
         }
+      </div>
+    </div>
+  } @else {
+    <!-- Skeleton/Fallback Hero Section -->
+    <div class="banner-carousel fallback-hero">
+      <div class="banner-overlay"></div>
+      <div class="banner-content">
+        <span class="banner-tag">Welcome to N-CommerceHub</span>
+        <h1>Your Ultimate Multi-Vendor Shopping Hub</h1>
+        <p>Discover products from trusted independent sellers worldwide.</p>
+        <a mat-flat-button class="banner-btn" routerLink="/products">
+          Shop Now
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
       </div>
     </div>
   }
 </section>
 
+<!-- Offers & Promotions Section -->
+<section class="offers-section">
+  <div class="section-header">
+    <div class="section-title-wrapper">
+      <span class="sub-title">Hot Deals</span>
+      <h2>Special Offers & Coupons</h2>
+    </div>
+    <a mat-stroked-button color="primary" routerLink="/offers" class="view-all-btn">
+      View All Coupons <mat-icon>east</mat-icon>
+    </a>
+  </div>
+
+  @if (coupons().length > 0) {
+    <div class="coupons-carousel">
+      <button mat-icon-button class="coupon-nav prev" (click)="prevCoupon()" [class.hidden]="coupons().length <= couponsPerView()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <div class="coupons-track-wrapper">
+        <div class="coupons-track" [style.transform]="'translateX(-' + (couponOffset * (100 / couponsPerView())) + '%)'">
+          @for (coupon of coupons(); track coupon.code) {
+            <div class="coupon-card-wrapper" [style.flex]="'0 0 calc(100% / ' + couponsPerView() + ')'">
+              <div class="coupon-card" (click)="copyCouponCode(coupon.code)">
+                <div class="coupon-icon-wrapper">
+                  <mat-icon>{{coupon.icon}}</mat-icon>
+                </div>
+                <div class="coupon-info">
+                  <h3>{{coupon.title}}</h3>
+                  <p>{{coupon.description}}</p>
+                </div>
+                <div class="coupon-action">
+                  <div class="code-badge">{{coupon.code}}</div>
+                  <span class="copy-text">
+                    <mat-icon>content_copy</mat-icon> Copy
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <button mat-icon-button class="coupon-nav next" (click)="nextCoupon()" [class.hidden]="coupons().length <= couponsPerView()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+      @if (coupons().length > couponsPerView()) {
+        <div class="coupon-dots">
+          @for (dot of couponDots(); track dot) {
+            <button class="dot" [class.active]="couponCurrentDot() === dot" (click)="goToCoupon(dot)"></button>
+          }
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<!-- Shop by Category Section -->
 <section class="categories-section">
   <div class="section-header">
-    <h2>Shop by Category</h2>
-    <a mat-button routerLink="/categories">View All</a>
+    <div class="section-title-wrapper">
+      <span class="sub-title">Explore</span>
+      <h2>Shop by Category</h2>
+    </div>
+    <a mat-stroked-button color="primary" routerLink="/categories" class="view-all-btn">
+      View All Categories <mat-icon>east</mat-icon>
+    </a>
   </div>
-  <div class="categories-grid">
-    @for (category of categories; track category.id) {
-      <a [routerLink]="['/products']" [queryParams]="{category: category.slug}" class="category-card">
-        <div class="category-image">
-          <img [src]="category.image" [alt]="category.name">
+  @if (categories().length > 0) {
+    <div class="categories-carousel" (mouseenter)="stopCategoryAutoplay()" (mouseleave)="startCategoryAutoplay()">
+      <button mat-icon-button class="cat-nav prev" (click)="prevCategory()" [class.hidden]="categories().length <= itemsPerView()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <div class="categories-track-wrapper">
+        <div class="categories-track" [style.transform]="'translateX(-' + (categoryOffset * (100 / itemsPerView())) + '%)'">
+          @for (category of categories(); track category.id) {
+            <a [routerLink]="['/products']" [queryParams]="{category: category.slug}" class="category-card"
+               [style.flex]="'0 0 calc(100% / ' + itemsPerView() + ')'">
+              <div class="category-image">
+                <img [src]="category.imageUrl || 'assets/images/placeholder.svg'" [alt]="category.name" (error)="handleCategoryImageError($event)">
+                <div class="category-overlay"></div>
+              </div>
+              <div class="category-info">
+                <h3>{{category.name}}</h3>
+                <span class="item-count">{{category.productCount || 0}} Products</span>
+              </div>
+            </a>
+          }
         </div>
-        <div class="category-info">
-          <mat-icon>{{category.icon}}</mat-icon>
-          <h3>{{category.name}}</h3>
-          <p>{{category.productCount}} Products</p>
+      </div>
+      <button mat-icon-button class="cat-nav next" (click)="nextCategory()" [class.hidden]="categories().length <= itemsPerView()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <div class="cat-dots">
+        @for (dot of categoryDots(); track $index) {
+          <button class="dot" [class.active]="$index === categoryCurrentDot()" (click)="goToCategoryDot($index)"></button>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="categories-grid">
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <div class="category-card skeleton">
+          <div class="category-image skeleton-bg"></div>
+          <div class="category-info">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
         </div>
+      }
+    </div>
+  }
+</section>
+
+<!-- Promotional Grid Section -->
+@if (promoBanners().length > 0) {
+  <section class="promo-banners-section">
+    <div class="promo-grid" [class.single]="promoBanners().length === 1" [class.double]="promoBanners().length === 2" [class.triple]="promoBanners().length >= 3">
+      @for (banner of promoBanners(); track banner.id) {
+        <div class="promo-banner-card" [style.backgroundImage]="'url(' + banner.imageUrl + ')'">
+          <div class="promo-overlay"></div>
+          <div class="promo-content">
+            <span class="promo-tag">Featured Deal</span>
+            <h3>{{banner.title}}</h3>
+            <p>{{banner.subtitle}}</p>
+            @if (banner.buttonText) {
+              <a mat-flat-button class="promo-btn" [routerLink]="banner.linkUrl">
+                {{banner.buttonText}}
+                <mat-icon>arrow_forward</mat-icon>
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+}
+
+<!-- How to Become a Vendor Section -->
+<section class="become-vendor-section">
+  <div class="vendor-bg-overlay"></div>
+  <div class="vendor-content-wrapper">
+    <div class="vendor-header">
+      <span class="sub-title light">Sell with Us</span>
+      <h2>How to Become a Vendor</h2>
+      <p>Start your business journey with us in just a few simple steps. Reach millions of customers.</p>
+    </div>
+    
+    <div class="steps-container">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-icon"><mat-icon>how_to_reg</mat-icon></div>
+        <h3>1. Sign Up</h3>
+        <p>Register as a vendor with your basic info and store details.</p>
+      </div>
+      
+      <div class="step-arrow"><mat-icon>east</mat-icon></div>
+      
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-icon"><mat-icon>rate_review</mat-icon></div>
+        <h3>2. Admin Approval</h3>
+        <p>Our admin team will review and approve your store application.</p>
+      </div>
+      
+      <div class="step-arrow"><mat-icon>east</mat-icon></div>
+      
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-icon"><mat-icon>add_shopping_cart</mat-icon></div>
+        <h3>3. Add Products</h3>
+        <p>List your products and set prices via the vendor dashboard.</p>
+      </div>
+      
+      <div class="step-arrow"><mat-icon>east</mat-icon></div>
+      
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <div class="step-icon"><mat-icon>verified</mat-icon></div>
+        <h3>4. Product Review</h3>
+        <p>Admin will verify and approve products before they go live.</p>
+      </div>
+      
+      <div class="step-arrow"><mat-icon>east</mat-icon></div>
+      
+      <div class="step-card">
+        <div class="step-num">5</div>
+        <div class="step-icon"><mat-icon>payments</mat-icon></div>
+        <h3>5. Sell & Earn</h3>
+        <p>Your products are live! Get orders, ship, and receive payments.</p>
+      </div>
+    </div>
+    
+    <div class="vendor-cta">
+      <a mat-flat-button class="cta-btn" [routerLink]="['/auth/register']" [queryParams]="{role: 'vendor'}">
+        <mat-icon>storefront</mat-icon> Register as a Vendor Now
       </a>
-    }
+    </div>
   </div>
 </section>
 
-<section class="featured-section">
-  <div class="section-header">
-    <h2>Featured Products</h2>
-    <a mat-button routerLink="/products" [queryParams]="{featured: 'true'}">View All</a>
-  </div>
-  <div class="products-grid">
-    @for (product of featuredProducts; track product.id) {
-      <app-product-card [product]="product"></app-product-card>
-    }
+<!-- Featured Products Section -->
+@if (featuredProducts().length > 0) {
+  <section class="featured-section">
+    <div class="section-header">
+      <div class="section-title-wrapper">
+        <span class="sub-title">Curated For You</span>
+        <h2>Featured Products</h2>
+      </div>
+      <a mat-stroked-button routerLink="/products" [queryParams]="{featured: 'true'}" class="view-all-btn">
+        View All <mat-icon>east</mat-icon>
+      </a>
+    </div>
+    <div class="products-grid">
+      @for (product of featuredProducts().slice(0, 6); track product.id) {
+        <app-product-card [product]="product"></app-product-card>
+      }
+    </div>
+  </section>
+}
+
+<!-- Trending Products Section -->
+@if (trendingProducts().length > 0) {
+  <section class="trending-section">
+    <div class="section-header">
+      <div class="section-title-wrapper">
+        <span class="sub-title">Popular Choice</span>
+        <h2>Trending Now</h2>
+      </div>
+      <a mat-stroked-button routerLink="/products" [queryParams]="{trending: 'true'}" class="view-all-btn">
+        View All <mat-icon>east</mat-icon>
+      </a>
+    </div>
+    <div class="products-grid">
+      @for (product of trendingProducts().slice(0, 6); track product.id) {
+        <app-product-card [product]="product"></app-product-card>
+      }
+    </div>
+  </section>
+}
+
+<!-- About Section -->
+<section class="home-about-section">
+  <div class="section-row">
+    <div class="info-block about-block">
+      <span class="sub-title text-primary">Our Story</span>
+      <h2>About N-CommerceHub</h2>
+      <p class="desc">
+        N-CommerceHub is a premier multi-vendor e-commerce platform designed to bring high-quality products from trusted sellers directly to your doorstep. We strive to empower independent entrepreneurs by providing a robust environment for retail, while offering our buyers secure transactions, fast delivery, and world-class customer service.
+      </p>
+      <div class="stats-wrapper">
+        <div class="stat-item">
+          <span class="stat-num">500+</span>
+          <span class="stat-lbl">Verified Vendors</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">10k+</span>
+          <span class="stat-lbl">Products</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">99%</span>
+          <span class="stat-lbl">Happy Buyers</span>
+        </div>
+      </div>
+      <a mat-button color="primary" routerLink="/about" class="learn-more-link">
+        Read Our Mission <mat-icon>arrow_right_alt</mat-icon>
+      </a>
+    </div>
+    <div class="image-block">
+      <img src="assets/images/home_about.png" alt="About N-CommerceHub" class="block-img">
+    </div>
   </div>
 </section>
 
-<section class="trending-section">
-  <div class="section-header">
-    <h2>Trending Now</h2>
-    <a mat-button routerLink="/products" [queryParams]="{trending: 'true'}">View All</a>
-  </div>
-  <div class="products-grid">
-    @for (product of trendingProducts; track product.id) {
-      <app-product-card [product]="product"></app-product-card>
-    }
-  </div>
-</section>
-
-<section class="features-section">
-  <div class="feature-card">
-    <mat-icon>local_shipping</mat-icon>
+<!-- Trust Badges Section -->
+<section class="trust-features-section">
+  <div class="trust-feature-card">
+    <div class="icon-circle">
+      <mat-icon>local_shipping</mat-icon>
+    </div>
     <h3>Free Delivery</h3>
     <p>On orders over INR 500</p>
   </div>
-  <div class="feature-card">
-    <mat-icon>verified_user</mat-icon>
+  <div class="trust-feature-card">
+    <div class="icon-circle">
+      <mat-icon>verified_user</mat-icon>
+    </div>
     <h3>Secure Payment</h3>
     <p>100% secure transactions</p>
   </div>
-  <div class="feature-card">
-    <mat-icon>support_agent</mat-icon>
+  <div class="trust-feature-card">
+    <div class="icon-circle">
+      <mat-icon>support_agent</mat-icon>
+    </div>
     <h3>24/7 Support</h3>
     <p>Dedicated customer service</p>
   </div>
-  <div class="feature-card">
-    <mat-icon>assignment_return</mat-icon>
+  <div class="trust-feature-card">
+    <div class="icon-circle">
+      <mat-icon>assignment_return</mat-icon>
+    </div>
     <h3>Easy Returns</h3>
     <p>7-day hassle-free returns</p>
+  </div>
+</section>
+
+<!-- Contact Section -->
+<section class="home-contact-section">
+  <div class="section-row reverse">
+    <div class="image-block">
+      <img src="assets/images/home_contact.png" alt="Contact Support" class="block-img">
+    </div>
+    <div class="info-block contact-block">
+      <span class="sub-title text-primary">Get In Touch</span>
+      <h2>Contact Support</h2>
+      <p class="desc">
+        Have any questions, concerns, or need help with an order? Our dedicated support team is available around the clock to assist you.
+      </p>
+      
+      <div class="contact-methods">
+        <div class="contact-method-item">
+          <mat-icon>location_on</mat-icon>
+          <div class="method-details">
+            <h4>Our Headquarters</h4>
+            <p>123 Market Street, Mumbai, India</p>
+          </div>
+        </div>
+        <div class="contact-method-item">
+          <mat-icon>phone</mat-icon>
+          <div class="method-details">
+            <h4>Phone Support</h4>
+            <p>+91 9876543210</p>
+          </div>
+        </div>
+        <div class="contact-method-item">
+          <mat-icon>mail</mat-icon>
+          <div class="method-details">
+            <h4>Email Support</h4>
+            <p>support&#64;marketplace.com</p>
+          </div>
+        </div>
+      </div>
+      
+      <a mat-button color="primary" routerLink="/contact" class="learn-more-link">
+        Send Us a Message <mat-icon>arrow_right_alt</mat-icon>
+      </a>
+    </div>
   </div>
 </section>

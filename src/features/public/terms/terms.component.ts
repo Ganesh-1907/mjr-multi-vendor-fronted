@@ -11,7 +11,7 @@ import { MatCardModule } from '@angular/material/card';
       <div class="hero"><h1>Terms of Service</h1></div>
       <mat-card><mat-card-content>
         <h2>1. Acceptance of Terms</h2>
-        <p>By accessing MarketPlace, you agree to these terms. If you disagree, please do not use our platform.</p>
+        <p>By accessing N-CommerceHub, you agree to these terms. If you disagree, please do not use our platform.</p>
         <h2>2. User Accounts</h2>
         <p>Users must provide accurate information. You are responsible for maintaining account security.</p>
         <h2>3. Buying & Selling</h2>

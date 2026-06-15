@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -16,13 +17,14 @@ export const routes: Routes = [
       { path: 'categories', loadComponent: () => import('./features/public/categories/categories.component').then(m => m.CategoriesComponent) },
       { path: 'vendors/:id', loadComponent: () => import('./features/public/vendor-store/vendor-store.component').then(m => m.VendorStoreComponent) },
       { path: 'about', loadComponent: () => import('./features/public/about/about.component').then(m => m.AboutComponent) },
+      { path: 'offers', loadComponent: () => import('./features/public/offers/offers.component').then(m => m.OffersComponent) },
       { path: 'contact', loadComponent: () => import('./features/public/contact/contact.component').then(m => m.ContactComponent) },
       { path: 'faq', loadComponent: () => import('./features/public/faq/faq.component').then(m => m.FaqComponent) },
       { path: 'terms', loadComponent: () => import('./features/public/terms/terms.component').then(m => m.TermsComponent) },
       { path: 'privacy', loadComponent: () => import('./features/public/privacy/privacy.component').then(m => m.PrivacyComponent) },
-      { path: 'cart', loadComponent: () => import('./features/public/cart/cart.component').then(m => m.CartComponent) },
-      { path: 'wishlist', loadComponent: () => import('./features/public/wishlist/wishlist.component').then(m => m.WishlistComponent) },
-      { path: 'checkout', loadComponent: () => import('./features/public/checkout/checkout.component').then(m => m.CheckoutComponent) }
+      { path: 'cart', loadComponent: () => import('./features/public/cart/cart.component').then(m => m.CartComponent), canActivate: [roleGuard(['customer'])] },
+      { path: 'wishlist', loadComponent: () => import('./features/public/wishlist/wishlist.component').then(m => m.WishlistComponent), canActivate: [roleGuard(['customer'])] },
+      { path: 'checkout', loadComponent: () => import('./features/public/checkout/checkout.component').then(m => m.CheckoutComponent), canActivate: [roleGuard(['customer'])] }
     ]
   },
   {

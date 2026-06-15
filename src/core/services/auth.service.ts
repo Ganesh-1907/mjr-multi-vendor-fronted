@@ -1,122 +1,163 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { User, Customer, Vendor, Admin } from '../models';
-import { DataService } from './data.service';
+import { ApiService } from './api.service';
+
+export interface AuthUser {
+  userId: number;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  token: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+  role: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: string;
+  storeName?: string;
+  otp: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private currentUserSignal = signal<User | null>(null);
+  private api = inject(ApiService);
+  private router = inject(Router);
+
+  private currentUserSignal = signal<AuthUser | null>(null);
   private isAuthenticatedSignal = signal(false);
 
   currentUser = this.currentUserSignal.asReadonly();
   isAuthenticated = this.isAuthenticatedSignal.asReadonly();
 
-  userRole = computed(() => this.currentUserSignal()?.role ?? null);
-  isAdmin = computed(() => this.currentUserSignal()?.role === 'admin');
-  isVendor = computed(() => this.currentUserSignal()?.role === 'vendor');
-  isCustomer = computed(() => this.currentUserSignal()?.role === 'customer');
+  userRole = computed(() => this.currentUserSignal()?.role?.toLowerCase() ?? null);
+  isAdmin = computed(() => this.userRole() === 'admin');
+  isVendor = computed(() => this.userRole() === 'vendor');
+  isCustomer = computed(() => this.userRole() === 'customer');
 
-  constructor(private dataService: DataService, private router: Router) {
-    this.loadUserFromStorage();
+  constructor() {
+    this.loadFromStorage();
   }
 
-  private loadUserFromStorage(): void {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
+  private loadFromStorage(): void {
+    const stored = localStorage.getItem('currentUser');
+    const token = localStorage.getItem('auth_token');
+    if (stored && token) {
       try {
-        const user = JSON.parse(storedUser) as User;
+        const user = JSON.parse(stored) as AuthUser;
+        user.token = token;
         this.currentUserSignal.set(user);
         this.isAuthenticatedSignal.set(true);
       } catch {
-        localStorage.removeItem('currentUser');
+        this.clearStorage();
       }
     }
   }
 
-  login(email: string, password: string, role: 'customer' | 'vendor' | 'admin'): boolean {
-    let user: User | undefined;
-
-    if (role === 'customer') {
-      user = this.dataService.getCustomers().find(c => c.email === email && c.password === password);
-    } else if (role === 'vendor') {
-      user = this.dataService.getVendors().find(v => v.email === email && v.password === password);
-    } else if (role === 'admin') {
-      user = this.dataService.getAdmins().find(a => a.email === email && a.password === password);
-    }
-
-    if (user) {
-      this.currentUserSignal.set(user);
-      this.isAuthenticatedSignal.set(true);
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      return true;
-    }
-    return false;
+  login(request: LoginRequest) {
+    return new Promise<AuthUser>((resolve, reject) => {
+      this.api.postRaw<AuthUser>('/auth/login', request).subscribe({
+        next: (response) => {
+          const user = response.data;
+          localStorage.setItem('auth_token', user.token);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSignal.set(user);
+          this.isAuthenticatedSignal.set(true);
+          resolve(user);
+        },
+        error: (err) => reject(err.error?.message || err.message || 'Login failed')
+      });
+    });
   }
 
-  register(userData: Partial<Customer> | Partial<Vendor>, role: 'customer' | 'vendor'): boolean {
-    const id = `new_${Date.now()}`;
+  sendOtp(email: string, role: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.postRaw<any>('/auth/send-otp', { email, role }).subscribe({
+        next: () => resolve(),
+        error: (err) => reject(err.error?.message || 'Failed to send OTP')
+      });
+    });
+  }
 
-    if (role === 'customer') {
-      const customer: Customer = {
-        id,
-        email: userData.email!,
-        password: userData.password!,
-        firstName: userData.firstName!,
-        lastName: userData.lastName!,
-        phone: userData.phone!,
-        role: 'customer',
-        addresses: [],
-        wishlist: [],
-        cartItems: [],
-        createdAt: new Date()
-      };
-      localStorage.setItem('currentUser', JSON.stringify(customer));
-      this.currentUserSignal.set(customer);
-      this.isAuthenticatedSignal.set(true);
-    } else if (role === 'vendor') {
-      const vendor: Vendor = {
-        id,
-        email: userData.email!,
-        password: userData.password!,
-        firstName: userData.firstName!,
-        lastName: userData.lastName!,
-        phone: userData.phone!,
-        role: 'vendor',
-        storeName: '',
-        storeDescription: '',
-        businessEmail: userData.email!,
-        businessPhone: userData.phone!,
-        gstNumber: '',
-        panNumber: '',
-        bankAccountNo: '',
-        bankIfsc: '',
-        bankName: '',
-        rating: 0,
-        totalProducts: 0,
-        totalSales: 0,
-        isVerified: false,
-        createdAt: new Date()
-      };
-      localStorage.setItem('currentUser', JSON.stringify(vendor));
-      this.currentUserSignal.set(vendor);
-      this.isAuthenticatedSignal.set(true);
-    }
-    return true;
+  resendOtp(email: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.postRaw<any>('/auth/resend-otp', { email }).subscribe({
+        next: () => resolve(),
+        error: (err) => reject(err.error?.message || 'Failed to resend OTP')
+      });
+    });
+  }
+
+  register(request: RegisterRequest): Promise<AuthUser> {
+    return new Promise((resolve, reject) => {
+      this.api.postRaw<AuthUser>('/auth/register', request).subscribe({
+        next: (response) => {
+          const user = response.data;
+          localStorage.setItem('auth_token', user.token);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSignal.set(user);
+          this.isAuthenticatedSignal.set(true);
+          resolve(user);
+        },
+        error: (err) => reject(err.error?.message || 'Registration failed')
+      });
+    });
   }
 
   logout(): void {
+    this.clearStorage();
     this.currentUserSignal.set(null);
     this.isAuthenticatedSignal.set(false);
-    localStorage.removeItem('currentUser');
     this.router.navigate(['/']);
   }
 
-  updateProfile(updates: Partial<User>): void {
-    const current = this.currentUserSignal();
-    if (current) {
-      const updated = { ...current, ...updates } as User;
-      this.currentUserSignal.set(updated);
-      localStorage.setItem('currentUser', JSON.stringify(updated));
-    }
+  forgotPassword(email: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.postRaw<any>('/auth/forgot-password', { email }).subscribe({
+        next: () => resolve(),
+        error: (err) => reject(err.error?.message || 'Failed to send reset OTP')
+      });
+    });
+  }
+
+  resetPassword(email: string, otp: string, password: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.postRaw<any>('/auth/reset-password', { email, otp, password }).subscribe({
+        next: () => resolve(),
+        error: (err) => reject(err.error?.message || 'Failed to reset password')
+      });
+    });
+  }
+
+  updateProfile(firstName: string, lastName: string, phone: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.putRaw<any>('/profile', { firstName, lastName, phone }).subscribe({
+        next: () => {
+          const current = this.currentUserSignal();
+          if (current) {
+            const updated = { ...current, firstName, lastName, phone };
+            localStorage.setItem('currentUser', JSON.stringify(updated));
+            this.currentUserSignal.set(updated);
+          }
+          resolve();
+        },
+        error: (err) => reject(err.error?.message || 'Failed to update profile')
+      });
+    });
+  }
+
+  private clearStorage(): void {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('currentUser');
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,8 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AuthService } from '../../../core/services/auth.service';
-import { DataService } from '../../../core/services/data.service';
-import { Order } from '../../../core/models';
+import { ApiDataService } from '../../../core/services/api-data.service';
 
 @Component({
   selector: 'app-vendor-analytics',
@@ -19,25 +18,25 @@ import { Order } from '../../../core/models';
       <div class="stats-grid">
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>trending_up</mat-icon><div>
-            <span class="stat-value">{{totalRevenue | currency:'INR'}}</span>
+            <span class="stat-value">{{totalRevenue() | currency:'INR'}}</span>
             <span class="stat-label">Total Revenue</span>
           </div></div>
         </mat-card-content></mat-card>
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>shopping_cart</mat-icon><div>
-            <span class="stat-value">{{orders.length}}</span>
+            <span class="stat-value">{{totalOrders()}}</span>
             <span class="stat-label">Total Orders</span>
           </div></div>
         </mat-card-content></mat-card>
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>avg_pricing</mat-icon><div>
-            <span class="stat-value">{{avgOrderValue | currency:'INR'}}</span>
+            <span class="stat-value">{{avgOrderValue() | currency:'INR'}}</span>
             <span class="stat-label">Avg. Order Value</span>
           </div></div>
         </mat-card-content></mat-card>
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>star</mat-icon><div>
-            <span class="stat-value">{{vendor?.rating | number:'1.1-1'}}</span>
+            <span class="stat-value">{{storeRating() | number:'1.1-1'}}</span>
             <span class="stat-label">Store Rating</span>
           </div></div>
         </mat-card-content></mat-card>
@@ -46,7 +45,7 @@ import { Order } from '../../../core/models';
         <mat-card-header><mat-card-title>Monthly Sales</mat-card-title></mat-card-header>
         <mat-card-content>
           <div class="chart-bars">
-            @for (month of monthlyData; track month.name) {
+            @for (month of monthlyData(); track month.name) {
               <div class="bar-item">
                 <div class="bar" [style.height.%]="month.percentage"></div>
                 <span class="label">{{month.name}}</span>
@@ -58,7 +57,7 @@ import { Order } from '../../../core/models';
       <mat-card class="top-products">
         <mat-card-header><mat-card-title>Top Products</mat-card-title></mat-card-header>
         <mat-card-content>
-          @for (product of topProducts; track product.name) {
+          @for (product of topProducts(); track product.name) {
             <div class="product-item">
               <img [src]="product.image">
               <div class="info"><p class="name">{{product.name}}</p><p class="sold">{{product.sold}} sold</p></div>
@@ -90,24 +89,40 @@ import { Order } from '../../../core/models';
     .product-item .revenue { font-weight: 600; color: #1a237e; }
   `]
 })
-export class VendorAnalyticsComponent {
+export class VendorAnalyticsComponent implements OnInit {
   auth = inject(AuthService);
-  dataService = inject(DataService);
+  apiData = inject(ApiDataService);
 
-  vendor = this.dataService.getVendorById(this.auth.currentUser()?.id || '');
-  orders: Order[] = this.vendor ? this.dataService.getOrdersByVendor(this.vendor.id) : [];
+  orders = signal<any[]>([]);
+  totalRevenue = computed(() => this.orders().reduce((sum: number, o: any) => sum + (o.total || o.totalAmount || 0), 0));
+  totalOrders = computed(() => this.orders().length);
+  avgOrderValue = computed(() => this.totalOrders() ? this.totalRevenue() / this.totalOrders() : 0);
+  storeRating = signal(0);
 
-  totalRevenue = this.orders.reduce((sum, o) => sum + o.total, 0);
-  avgOrderValue = this.orders.length ? this.totalRevenue / this.orders.length : 0;
-
-  monthlyData = [
+  monthlyData = signal([
     { name: 'Jan', percentage: 45 }, { name: 'Feb', percentage: 60 }, { name: 'Mar', percentage: 55 },
     { name: 'Apr', percentage: 70 }, { name: 'May', percentage: 80 }, { name: 'Jun', percentage: 90 }
-  ];
+  ]);
 
-  topProducts = [
-    { name: 'iPhone 15 Pro Max', sold: 45, revenue: 6000000, image: 'https://images.pexels.com/photos/7889460/pexels-photo-7889460.jpeg?auto=compress&cs=tinysrgb&w=100' },
-    { name: 'Samsung Galaxy S24 Ultra', sold: 38, revenue: 5000000, image: 'https://images.pexels.com/photos/607835/pexels-photo-607835.jpeg?auto=compress&cs=tinysrgb&w=100' },
-    { name: 'MacBook Pro', sold: 15, revenue: 3750000, image: 'https://images.pexels.com/photos/18105315/pexels-photo-18105315.jpeg?auto=compress&cs=tinysrgb&w=100' }
-  ];
+  topProducts = signal([
+    { name: 'iPhone 15 Pro Max', sold: 45, revenue: 6000000, image: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=compress&cs=tinysrgb&w=100' },
+    { name: 'Samsung Galaxy S24 Ultra', sold: 38, revenue: 5000000, image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=compress&cs=tinysrgb&w=100' },
+    { name: 'MacBook Pro', sold: 15, revenue: 3750000, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=compress&cs=tinysrgb&w=100' }
+  ]);
+
+  ngOnInit(): void {
+    this.apiData.getVendorAnalytics().subscribe((data: any) => {
+      if (data) {
+        if (data.orders) this.orders.set(data.orders);
+        if (data.storeRating !== undefined) this.storeRating.set(data.storeRating);
+        else if (data.rating !== undefined) this.storeRating.set(data.rating);
+        else if (data.vendor?.rating !== undefined) this.storeRating.set(data.vendor.rating);
+        if (data.monthlyData) this.monthlyData.set(data.monthlyData);
+        if (data.topProducts) this.topProducts.set(data.topProducts);
+      }
+    });
+    this.apiData.getVendorOrders(0).subscribe(data => {
+      if (!this.orders().length) this.orders.set(data);
+    });
+  }
 }

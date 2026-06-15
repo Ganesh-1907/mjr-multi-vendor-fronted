@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,7 +16,7 @@ import { ThemeService } from '../../../core/services/theme.service';
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule, MatButtonModule, MatCardModule, MatInputModule, MatFormFieldModule, MatDividerModule, MatSlideToggleModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule, MatButtonModule, MatCardModule, MatInputModule, MatFormFieldModule, MatDividerModule, MatSlideToggleModule],
   template: `
     <div class="settings-page">
       <h1>Account Settings</h1>
@@ -88,6 +89,17 @@ export class SettingsComponent {
     phone: [this.auth.currentUser()?.phone || '', Validators.required]
   });
   updateProfile(): void {
-    this.snackBar.open('Profile updated successfully!', 'Close', { duration: 3000 });
+    if (this.profileForm.invalid) {
+      this.snackBar.open('Please fill out all required fields.', 'Close', { duration: 3000 });
+      return;
+    }
+    const { firstName, lastName, phone } = this.profileForm.value;
+    this.auth.updateProfile(firstName, lastName, phone)
+      .then(() => {
+        this.snackBar.open('Profile updated successfully!', 'Close', { duration: 3000 });
+      })
+      .catch((err) => {
+        this.snackBar.open(err || 'Failed to update profile.', 'Close', { duration: 4000 });
+      });
   }
 }

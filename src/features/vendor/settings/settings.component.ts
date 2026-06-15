@@ -70,6 +70,17 @@ export class VendorSettingsComponent {
   });
 
   saveSettings(): void {
-    this.snackBar.open('Settings saved successfully!', 'Close', { duration: 3000 });
+    if (this.settingsForm.invalid) {
+      this.snackBar.open('Please fill out all required fields.', 'Close', { duration: 3000 });
+      return;
+    }
+    const { firstName, lastName, phone } = this.settingsForm.value;
+    this.auth.updateProfile(firstName, lastName, phone)
+      .then(() => {
+        this.snackBar.open('Settings saved successfully!', 'Close', { duration: 3000 });
+      })
+      .catch((err) => {
+        this.snackBar.open(err || 'Failed to update settings.', 'Close', { duration: 4000 });
+      });
   }
 }

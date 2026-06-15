@@ -7,6 +7,7 @@ export const CUSTOMER_ROUTES: Routes = [
     path: '',
     canActivate: [roleGuard(['customer'] as UserRole[])],
     children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.CustomerDashboardComponent) },
       { path: 'orders', loadComponent: () => import('./orders/orders.component').then(m => m.CustomerOrdersComponent) },
       { path: 'wishlist', loadComponent: () => import('../public/wishlist/wishlist.component').then(m => m.WishlistComponent) },

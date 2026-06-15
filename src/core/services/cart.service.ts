@@ -1,103 +1,103 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { CartItem, Product, ProductVariant } from '../models';
-import { DataService } from './data.service';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 
-export interface CartItemWithDetails {
-  product: Product;
-  variant: ProductVariant;
+export interface CartItem {
+  id: number;
+  productId: number;
+  variantId: number;
+  productName: string;
+  productSlug?: string;
+  productImageUrl: string;
+  vendorName?: string;
+  vendorId?: number;
+  variantName: string;
+  price: number;
+  comparePrice?: number;
   quantity: number;
+  stockQuantity: number;
+  subtotal: number;
+}
+
+export interface CartData {
+  items: CartItem[];
+  itemCount: number;
   subtotal: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  private cartItemsSignal = signal<CartItem[]>([]);
-  private STORAGE_KEY = 'user_cart';
+  private api = inject(ApiService);
+  private auth = inject(AuthService);
 
-  items = this.cartItemsSignal.asReadonly();
+  private cartData = signal<CartData>({ items: [], itemCount: 0, subtotal: 0 });
+  private loading = signal(false);
 
-  itemsWithDetails = computed(() => {
-    const items = this.cartItemsSignal();
-    return items.map(item => {
-      const product = this.dataService.getProductById(item.productId);
-      const variant = product?.variants.find(v => v.id === item.variantId);
-      if (product && variant) {
-        return {
-          product,
-          variant,
-          quantity: item.quantity,
-          subtotal: variant.price * item.quantity
-        };
-      }
-      return null;
-    }).filter((item): item is CartItemWithDetails => item !== null);
-  });
+  items = computed(() => this.cartData().items);
+  itemCount = computed(() => this.cartData().itemCount);
+  subtotal = computed(() => this.cartData().subtotal);
+  hasItems = computed(() => this.cartData().items.length > 0);
+  isLoading = this.loading.asReadonly();
+  itemsWithDetails = computed(() => this.cartData().items);
 
-  itemCount = computed(() => this.cartItemsSignal().reduce((sum, item) => sum + item.quantity, 0));
-
-  subtotal = computed(() => this.itemsWithDetails().reduce((sum, item) => sum + item.subtotal, 0));
-
-  hasItems = computed(() => this.cartItemsSignal().length > 0);
-
-  constructor(private dataService: DataService, private authService: AuthService) {
-    this.loadCartFromStorage();
+  loadCart(): void {
+    if (!this.auth.isAuthenticated()) return;
+    this.loading.set(true);
+    this.api.get<CartData>('/cart').subscribe({
+      next: (data) => { this.cartData.set(data); this.loading.set(false); },
+      error: () => { this.loading.set(false); }
+    });
   }
 
-  private loadCartFromStorage(): void {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    if (stored) {
-      try {
-        const items = JSON.parse(stored) as CartItem[];
-        this.cartItemsSignal.set(items);
-      } catch {
-        localStorage.removeItem(this.STORAGE_KEY);
-      }
-    }
+  addToCart(productId: number, variantId: number, quantity: number = 1): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.postRaw<any>('/cart/items', { productId, variantId, quantity }).subscribe({
+        next: () => { this.loadCart(); resolve(); },
+        error: (err: any) => reject(err.error?.message || 'Failed to add to cart')
+      });
+    });
   }
 
-  private saveCartToStorage(items: CartItem[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
+  updateQuantity(cartItemId: number, quantity: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.putRaw<any>(`/cart/items/${cartItemId}`, { quantity }).subscribe({
+        next: () => { this.loadCart(); resolve(); },
+        error: (err: any) => reject(err.error?.message || 'Failed to update quantity')
+      });
+    });
   }
 
-  addToCart(productId: string, variantId: string, quantity: number = 1): void {
-    const currentItems = this.cartItemsSignal();
-    const existingIndex = currentItems.findIndex(i => i.productId === productId && i.variantId === variantId);
-
-    if (existingIndex >= 0) {
-      const updated = [...currentItems];
-      updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + quantity };
-      this.cartItemsSignal.set(updated);
-      this.saveCartToStorage(updated);
-    } else {
-      const updated = [...currentItems, { productId, variantId, quantity }];
-      this.cartItemsSignal.set(updated);
-      this.saveCartToStorage(updated);
-    }
+  removeItem(cartItemId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.deleteRaw<any>(`/cart/items/${cartItemId}`).subscribe({
+        next: () => { this.loadCart(); resolve(); },
+        error: (err: any) => reject(err.error?.message || 'Failed to remove item')
+      });
+    });
   }
 
-  removeFromCart(productId: string, variantId: string): void {
-    const updated = this.cartItemsSignal().filter(i => !(i.productId === productId && i.variantId === variantId));
-    this.cartItemsSignal.set(updated);
-    this.saveCartToStorage(updated);
+  clearCart(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.deleteRaw<any>('/cart').subscribe({
+        next: () => { this.cartData.set({ items: [], itemCount: 0, subtotal: 0 }); resolve(); },
+        error: (err: any) => reject(err.error?.message || 'Failed to clear cart')
+      });
+    });
   }
 
-  updateQuantity(productId: string, variantId: string, quantity: number): void {
-    if (quantity <= 0) {
-      this.removeFromCart(productId, variantId);
-      return;
-    }
-    const updated = this.cartItemsSignal().map(i => i.productId === productId && i.variantId === variantId ? { ...i, quantity } : i);
-    this.cartItemsSignal.set(updated);
-    this.saveCartToStorage(updated);
+  getVendorById(vendorId: number): string | undefined {
+    return undefined;
   }
 
-  clearCart(): void {
-    this.cartItemsSignal.set([]);
-    localStorage.removeItem(this.STORAGE_KEY);
+  updateQuantityByProduct(productId: number, variantId: number, quantity: number): Promise<void> {
+    const item = this.cartData().items.find(i => i.productId === productId && i.variantId === variantId);
+    if (!item) return Promise.reject('Item not found in cart');
+    return this.updateQuantity(item.id, quantity);
   }
 
-  isInCart(productId: string, variantId: string): boolean {
-    return this.cartItemsSignal().some(i => i.productId === productId && i.variantId === variantId);
+  removeItemByProduct(productId: number, variantId: number): Promise<void> {
+    const item = this.cartData().items.find(i => i.productId === productId && i.variantId === variantId);
+    if (!item) return Promise.reject('Item not found in cart');
+    return this.removeItem(item.id);
   }
 }

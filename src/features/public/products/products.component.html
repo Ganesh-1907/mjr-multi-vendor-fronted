@@ -7,23 +7,32 @@
   </div>
 
   <div class="products-container">
-    <aside class="filters-sidebar">
+    <!-- Backdrop Overlay for Mobile Filter Sidebar -->
+    <div class="filters-backdrop" [class.show]="isMobileFiltersOpen()" (click)="toggleMobileFilters()"></div>
+
+    <aside class="filters-sidebar" [class.open]="isMobileFiltersOpen()">
+      <div class="sidebar-header-mobile">
+        <h3>Filters</h3>
+        <button mat-icon-button (click)="toggleMobileFilters()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
       <mat-accordion>
         <mat-expansion-panel [expanded]="true">
           <mat-expansion-panel-header>
             <mat-panel-title>Categories</mat-panel-title>
           </mat-expansion-panel-header>
           <div class="filter-options">
-            @for (category of categories; track category.id) {
-              <label class="filter-option" [class.active]="selectedCategory() === category.id" (click)="selectCategory(selectedCategory() === category.id ? null : category.id)">
+            @for (category of categories(); track category.id) {
+              <label class="filter-option" [class.active]="selectedCategory() === category.slug" (click)="selectCategory(selectedCategory() === category.slug ? null : category.slug)">
                 <span>{{category.name}}</span>
-                <span class="count">({{category.productCount}})</span>
               </label>
             }
           </div>
         </mat-expansion-panel>
 
-        <mat-expansion-panel>
+        <mat-expansion-panel [expanded]="true">
           <mat-expansion-panel-header>
             <mat-panel-title>Price Range</mat-panel-title>
           </mat-expansion-panel-header>
@@ -42,7 +51,7 @@
           </div>
         </mat-expansion-panel>
 
-        <mat-expansion-panel>
+        <mat-expansion-panel [expanded]="true">
           <mat-expansion-panel-header>
             <mat-panel-title>Rating</mat-panel-title>
           </mat-expansion-panel-header>
@@ -69,8 +78,13 @@
 
     <main class="products-main">
       <div class="toolbar">
+        <button mat-flat-button color="primary" class="mobile-filter-btn" (click)="toggleMobileFilters()">
+          <mat-icon>filter_list</mat-icon>
+          <span>Filters</span>
+        </button>
+
         <div class="search-bar">
-          <mat-form-field appearance="outline" class="search-field">
+          <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
             <input matInput placeholder="Search products..." [value]="searchQuery()" (input)="updateSearch($any($event.target).value)">
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
@@ -78,7 +92,7 @@
 
         <div class="sort-and-count">
           <span class="result-count">{{products().length}} Products</span>
-          <mat-form-field appearance="outline" class="sort-field">
+          <mat-form-field appearance="outline" class="sort-field" subscriptSizing="dynamic">
             <mat-label>Sort By</mat-label>
             <mat-select [value]="selectedSort()" (selectionChange)="setSort($event.value)">
               <mat-option value="featured">Featured</mat-option>
@@ -99,7 +113,7 @@
         </div>
       } @else {
         <div class="no-results">
-          <mat-icon large>search_off</mat-icon>
+          <mat-icon>search_off</mat-icon>
           <h3>No products found</h3>
           <p>Try adjusting your filters or search terms</p>
           <button mat-raised-button color="primary" (click)="clearAllFilters()">Clear Filters</button>

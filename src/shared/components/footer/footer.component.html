@@ -1,9 +1,9 @@
 <footer class="footer">
   <div class="footer-top">
     <div class="footer-section">
-      <h3>About MarketPlace</h3>
+      <h3>About N-CommerceHub</h3>
       <p class="about-text">
-        MarketPlace is a multi-vendor e-commerce platform connecting millions of buyers with trusted sellers.
+        N-CommerceHub is a multi-vendor e-commerce platform connecting millions of buyers with trusted sellers.
         We offer a wide range of products with secure payments and fast delivery.
       </p>
       <div class="social-links">
@@ -37,29 +37,29 @@
     </div>
 
     <div class="footer-section">
-      <h3>Newsletter</h3>
-      <p>Subscribe to receive updates on offers and new arrivals.</p>
-      <form class="newsletter-form" (ngSubmit)="subscribeNewsletter()">
-        <mat-form-field appearance="outline" class="newsletter-input">
-          <input matInput type="email" placeholder="Enter your email" [(ngModel)]="email" name="email" required>
-        </mat-form-field>
-        <button mat-raised-button color="primary" type="submit">Subscribe</button>
-      </form>
+      <h3>Contact Details</h3>
+      <ul class="contact-list">
+        <li>
+          <mat-icon>place</mat-icon>
+          <span>123 Market Street, Mumbai, India</span>
+        </li>
+        <li>
+          <mat-icon>phone</mat-icon>
+          <span>+91 9876543210</span>
+        </li>
+        <li>
+          <mat-icon>email</mat-icon>
+          <span>support&#64;marketplace.com</span>
+        </li>
+      </ul>
     </div>
   </div>
 
   <mat-divider></mat-divider>
 
   <div class="footer-bottom">
-    <div class="payment-methods">
-      <span>We accept:</span>
-      <mat-icon>credit_card</mat-icon>
-      <mat-icon>account_balance</mat-icon>
-      <mat-icon>phone_android</mat-icon>
-      <mat-icon>payments</mat-icon>
-    </div>
     <div class="copyright">
-      &copy; {{currentYear}} MarketPlace. All rights reserved.
+      &copy; {{currentYear}} N-CommerceHub. All rights reserved.
     </div>
   </div>
 </footer>
