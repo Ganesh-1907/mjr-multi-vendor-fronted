@@ -9,13 +9,14 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { ApiDataService } from '../../../core/services/api-data.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-admin-vendors',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatChipsModule, MatMenuModule, MatDialogModule],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatChipsModule, MatMenuModule, MatDialogModule, MatSnackBarModule],
   template: `
     <div class="vendors-page">
       <div class="page-header"><h1>Vendor Management</h1></div>
@@ -26,7 +27,6 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
               <th mat-header-cell *matHeaderCellDef>Store</th>
               <td mat-cell *matCellDef="let vendor">
                 <div class="store-info">
-                  <img [src]="vendor.storeLogo || vendor.storeLogoUrl" [alt]="vendor.storeName">
                   <div><span class="store-name">{{vendor.storeName}}</span><span class="owner">({{vendor.ownerFirstName || vendor.firstName}} {{vendor.ownerLastName || vendor.lastName}})</span></div>
                 </div>
               </td>
@@ -34,12 +34,6 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
             <ng-container matColumnDef="email">
               <th mat-header-cell *matHeaderCellDef>Email</th>
               <td mat-cell *matCellDef="let vendor">{{vendor.email}}</td>
-            </ng-container>
-            <ng-container matColumnDef="rating">
-              <th mat-header-cell *matHeaderCellDef>Rating</th>
-              <td mat-cell *matCellDef="let vendor">
-                <span class="rating"><mat-icon>star</mat-icon> {{vendor.rating | number:'1.1-1'}}</span>
-              </td>
             </ng-container>
             <ng-container matColumnDef="products">
               <th mat-header-cell *matHeaderCellDef>Products</th>
@@ -49,12 +43,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
               <th mat-header-cell *matHeaderCellDef>Sales</th>
               <td mat-cell *matCellDef="let vendor">{{vendor.totalSales | number}}</td>
             </ng-container>
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let vendor">
-                <mat-chip [color]="vendor.isVerified ? 'primary' : 'warn'">{{vendor.isVerified ? 'Verified' : 'Pending'}}</mat-chip>
-              </td>
-            </ng-container>
+
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef>Actions</th>
               <td mat-cell *matCellDef="let vendor">
@@ -66,12 +55,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
                     <mat-icon>visibility</mat-icon>
                     <span>View Details</span>
                   </button>
-                  @if (!vendor.isVerified) {
-                    <button mat-menu-item (click)="approveVendor(vendor.id)">
-                      <mat-icon color="primary">check_circle</mat-icon>
-                      <span>Approve Vendor</span>
-                    </button>
-                  }
+
                   <button mat-menu-item (click)="rejectVendor(vendor.id)">
                     <mat-icon color="warn">block</mat-icon>
                     <span>Reject / Block Vendor</span>
@@ -92,7 +76,6 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
     .vendors-table { width: 100%; }
     th, td { padding: 12px; }
     .store-info { display: flex; align-items: center; gap: 12px; }
-    .store-info img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
     .store-name { font-weight: 500; display: block; }
     .owner { font-size: 12px; color: #757575; }
     .rating { display: flex; align-items: center; gap: 4px; }
@@ -107,7 +90,7 @@ export class AdminVendorsComponent implements OnInit {
   private dialog = inject(MatDialog);
 
   vendors = signal<any[]>([]);
-  displayedColumns = ['store', 'email', 'rating', 'products', 'sales', 'status', 'actions'];
+  displayedColumns = ['store', 'email', 'products', 'sales', 'actions'];
 
   ngOnInit(): void {
     this.loadVendors();
