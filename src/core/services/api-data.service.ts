@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface ProductImage {
@@ -16,6 +16,7 @@ export interface ProductVariant {
   price: number;
   comparePrice?: number;
   stock: number;
+  stockQuantity?: number;
   attributes: { [key: string]: string };
 }
 
@@ -189,7 +190,9 @@ export class ApiDataService {
   }
 
   getProductBySlug(slug: string): Observable<Product> {
-    return this.api.get<Product>(`/products/${slug}`);
+    return this.api.get<Product>(`/products/${slug}`).pipe(
+      map(prod => this.mapProductStock(prod))
+    );
   }
 
   getFeaturedProducts(): Observable<ProductPreview[]> {
@@ -281,15 +284,21 @@ export class ApiDataService {
   }
 
   getVendorProducts(): Observable<Product[]> {
-    return this.api.get<Product[]>('/vendor/products');
+    return this.api.get<Product[]>('/vendor/products').pipe(
+      map(prods => prods.map(p => this.mapProductStock(p)))
+    );
   }
 
   createProduct(productData: any): Observable<Product> {
-    return this.api.post<Product>('/vendor/products', productData);
+    return this.api.post<Product>('/vendor/products', productData).pipe(
+      map(prod => this.mapProductStock(prod))
+    );
   }
 
   updateProduct(productId: number, productData: any): Observable<Product> {
-    return this.api.put<Product>(`/vendor/products/${productId}`, productData);
+    return this.api.put<Product>(`/vendor/products/${productId}`, productData).pipe(
+      map(prod => this.mapProductStock(prod))
+    );
   }
 
   deleteProduct(productId: number): Observable<void> {
@@ -467,5 +476,15 @@ export class ApiDataService {
 
   deleteContactInquiry(id: number): Observable<any> {
     return this.api.delete<any>(`/admin/contacts/${id}`);
+  }
+
+  mapProductStock(prod: Product): Product {
+    if (prod && prod.variants) {
+      prod.variants = prod.variants.map(v => ({
+        ...v,
+        stock: v.stockQuantity ?? v.stock ?? 0
+      }));
+    }
+    return prod;
   }
 }
