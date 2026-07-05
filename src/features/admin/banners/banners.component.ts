@@ -7,13 +7,15 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
 import { ApiDataService, Category } from '../../../core/services/api-data.service';
+import { UploadService } from '../../../core/services/upload.service';
 
 @Component({
   selector: 'app-admin-banners',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatChipsModule, MatMenuModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatChipsModule, MatMenuModule, MatProgressSpinnerModule],
   template: `
     <div class="banners-page fade-in">
       <div class="page-header">
@@ -113,8 +115,15 @@ import { ApiDataService, Category } from '../../../core/services/api-data.servic
                 <div class="form-row">
                   <div class="form-group full-width">
                     <label for="imageUrl">Image URL *</label>
-                    <input type="text" id="imageUrl" name="imageUrl" class="form-control"
-                           [(ngModel)]="formImageUrl" required placeholder="https://example.com/image.jpg">
+                    <div class="url-upload-row">
+                      <input type="text" id="imageUrl" name="imageUrl" class="form-control"
+                             [(ngModel)]="formImageUrl" required placeholder="https://example.com/image.jpg">
+                      <button type="button" class="upload-btn" (click)="fileInput.click()" [disabled]="uploading()">
+                        <mat-icon>{{ uploading() ? 'hourglass_empty' : 'cloud_upload' }}</mat-icon>
+                        {{ uploading() ? 'Uploading...' : 'Upload' }}
+                      </button>
+                      <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)">
+                    </div>
                     @if (formImageUrl()) {
                       <div class="image-preview">
                         <img [src]="formImageUrl()" alt="Preview" #previewImg (error)="previewImg.style.display='none'">
@@ -224,6 +233,12 @@ import { ApiDataService, Category } from '../../../core/services/api-data.servic
     .image-preview { margin-top: 8px; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 4px; display: flex; justify-content: center; background: var(--bg-tertiary); }
     .image-preview img { max-width: 100%; max-height: 120px; object-fit: contain; border-radius: 2px; }
     .form-help-text { font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.3; }
+    .url-upload-row { display: flex; gap: 8px; align-items: center; }
+    .url-upload-row .form-control { flex: 1; }
+    .upload-btn { display: flex; align-items: center; gap: 4px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; transition: opacity 0.2s; }
+    .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .upload-btn:hover:not(:disabled) { opacity: 0.9; }
+    .upload-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
     .modal-backdrop {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -274,10 +289,12 @@ import { ApiDataService, Category } from '../../../core/services/api-data.servic
 export class AdminBannersComponent implements OnInit {
   apiService = inject(ApiService);
   apiDataService = inject(ApiDataService);
+  uploadService = inject(UploadService);
   
   banners = signal<any[]>([]);
   categories = signal<Category[]>([]);
   displayedColumns = ['preview', 'title', 'position', 'link', 'status', 'actions'];
+  uploading = signal(false);
 
   showModal = signal(false);
   isEditMode = signal(false);
@@ -313,6 +330,25 @@ export class AdminBannersComponent implements OnInit {
       next: (data) => this.categories.set(data),
       error: (err) => console.error('Failed to load categories', err)
     });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.uploading.set(true);
+    this.uploadService.uploadFile(file).subscribe({
+      next: (url) => {
+        this.formImageUrl.set(url);
+        this.uploading.set(false);
+      },
+      error: (err) => {
+        alert('Upload failed: ' + (err.error?.message || err.message));
+        this.uploading.set(false);
+      }
+    });
+    input.value = '';
   }
 
   openAddModal(): void {

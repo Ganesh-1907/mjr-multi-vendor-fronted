@@ -6,12 +6,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiDataService, Category } from '../../../core/services/api-data.service';
+import { UploadService } from '../../../core/services/upload.service';
 
 @Component({
   selector: 'app-admin-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatMenuModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatMenuModule, MatProgressSpinnerModule],
   template: `
     <div class="categories-page fade-in">
       <div class="page-header">
@@ -98,8 +100,15 @@ import { ApiDataService, Category } from '../../../core/services/api-data.servic
 
                 <div class="form-group">
                   <label for="catImageUrl">Image URL</label>
-                  <input type="text" id="catImageUrl" name="imageUrl" class="form-control"
-                         [(ngModel)]="formImageUrl" placeholder="https://example.com/image.jpg">
+                  <div class="url-upload-row">
+                    <input type="text" id="catImageUrl" name="imageUrl" class="form-control"
+                           [(ngModel)]="formImageUrl" placeholder="https://example.com/image.jpg">
+                    <button type="button" class="upload-btn" (click)="fileInput.click()" [disabled]="uploading()">
+                      <mat-icon>{{ uploading() ? 'hourglass_empty' : 'cloud_upload' }}</mat-icon>
+                      {{ uploading() ? 'Uploading...' : 'Upload' }}
+                    </button>
+                    <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)">
+                  </div>
                   @if (formImageUrl()) {
                     <div class="image-preview">
                       <img [src]="formImageUrl()" alt="Preview" (error)="onPreviewError($event)">
@@ -175,6 +184,12 @@ import { ApiDataService, Category } from '../../../core/services/api-data.servic
     }
     .form-control:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
     .textarea { resize: vertical; }
+    .url-upload-row { display: flex; gap: 8px; align-items: center; }
+    .url-upload-row .form-control { flex: 1; }
+    .upload-btn { display: flex; align-items: center; gap: 4px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; transition: opacity 0.2s; }
+    .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .upload-btn:hover:not(:disabled) { opacity: 0.9; }
+    .upload-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-primary); }
     .checkbox-group input { width: 16px; height: 16px; accent-color: var(--primary); }
     .modal-footer {
@@ -206,8 +221,10 @@ import { ApiDataService, Category } from '../../../core/services/api-data.servic
 })
 export class AdminCategoriesComponent implements OnInit {
   private apiDataService = inject(ApiDataService);
+  private uploadService = inject(UploadService);
   categories = signal<Category[]>([]);
   displayedColumns = ['image', 'name', 'products', 'status', 'actions'];
+  uploading = signal(false);
 
   showModal = signal(false);
   isEditMode = signal(false);
@@ -227,6 +244,25 @@ export class AdminCategoriesComponent implements OnInit {
       next: (data) => this.categories.set(data),
       error: (err) => console.error('Failed to load categories', err)
     });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.uploading.set(true);
+    this.uploadService.uploadFile(file).subscribe({
+      next: (url) => {
+        this.formImageUrl.set(url);
+        this.uploading.set(false);
+      },
+      error: (err) => {
+        alert('Upload failed: ' + (err.error?.message || err.message));
+        this.uploading.set(false);
+      }
+    });
+    input.value = '';
   }
 
   openAddModal(): void {

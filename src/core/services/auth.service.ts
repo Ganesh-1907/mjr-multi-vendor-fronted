@@ -139,9 +139,12 @@ export class AuthService {
     });
   }
 
-  updateProfile(firstName: string, lastName: string, phone: string): Promise<void> {
+  updateProfile(firstName: string, lastName: string, phone: string, avatar?: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.api.putRaw<any>('/profile', { firstName, lastName, phone }).subscribe({
+      const body: any = { firstName, lastName, phone };
+      if (avatar !== undefined) body.avatar = avatar;
+
+      this.api.putRaw<any>('/profile', body).subscribe({
         next: () => {
           const current = this.currentUserSignal();
           if (current) {
