@@ -177,6 +177,10 @@ export interface OrderTracking {
 export class ApiDataService {
   private api = inject(ApiService);
 
+  getAdminCategories(): Observable<Category[]> {
+    return this.api.get<Category[]>('/admin/categories');
+  }
+
   getCategories(): Observable<Category[]> {
     return this.api.get<Category[]>('/categories');
   }
@@ -186,7 +190,8 @@ export class ApiDataService {
   }
 
   getProducts(filters?: { category?: string; vendor?: string; minPrice?: string; maxPrice?: string; sort?: string; page?: number; size?: number; search?: string; minRating?: string }): Observable<ProductPreview[]> {
-    return this.api.get<ProductPreview[]>('/products', filters as any);
+    return this.api.get<any>('/products', filters)
+      .pipe(map(res => res.products || res));
   }
 
   getProductBySlug(slug: string): Observable<Product> {
@@ -204,11 +209,13 @@ export class ApiDataService {
   }
 
   getProductsByCategory(categorySlug: string): Observable<ProductPreview[]> {
-    return this.api.get<ProductPreview[]>(`/categories/${categorySlug}/products`);
+    return this.api.get<any>(`/categories/${categorySlug}/products`)
+      .pipe(map(res => res.products || res));
   }
 
-  getProductsByVendor(vendorId: number): Observable<ProductPreview[]> {
-    return this.api.get<ProductPreview[]>(`/vendors/${vendorId}/products`);
+  getProductsByVendor(vendorId: any): Observable<ProductPreview[]> {
+    return this.api.get<any>(`/vendors/${vendorId}/products`)
+      .pipe(map(res => res.products || res));
   }
 
   getRelatedProducts(productId: number): Observable<ProductPreview[]> {
@@ -396,6 +403,7 @@ export class ApiDataService {
   rejectProduct(productId: number): Observable<Product> {
     return this.api.put<Product>(`/admin/products/${productId}/reject`, {});
   }
+
 
   getProfile(): Observable<any> {
     return this.api.get<any>('/profile');

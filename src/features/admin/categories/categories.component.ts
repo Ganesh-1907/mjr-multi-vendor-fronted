@@ -240,7 +240,7 @@ export class AdminCategoriesComponent implements OnInit {
   }
 
   loadCategories(): void {
-    this.apiDataService.getCategories().subscribe({
+    this.apiDataService.getAdminCategories().subscribe({
       next: (data) => this.categories.set(data),
       error: (err) => console.error('Failed to load categories', err)
     });
@@ -275,9 +275,9 @@ export class AdminCategoriesComponent implements OnInit {
     this.showModal.set(true);
   }
 
-  openEditModal(cat: Category): void {
+  openEditModal(cat: any): void {
     this.isEditMode.set(true);
-    this.selectedCategoryId.set(cat.id);
+    this.selectedCategoryId.set(cat.id || cat._id);
     this.formName.set(cat.name);
     this.formImageUrl.set(cat.imageUrl || '');
     this.formDescription.set(cat.description || '');

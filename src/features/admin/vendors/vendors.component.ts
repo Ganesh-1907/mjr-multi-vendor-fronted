@@ -27,21 +27,31 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
               <th mat-header-cell *matHeaderCellDef>Store</th>
               <td mat-cell *matCellDef="let vendor">
                 <div class="store-info">
-                  <div><span class="store-name">{{vendor.storeName}}</span><span class="owner">({{vendor.ownerFirstName || vendor.firstName}} {{vendor.ownerLastName || vendor.lastName}})</span></div>
+                  <div><span class="store-name">{{vendor.storeName}}</span><span class="owner" *ngIf="vendor.user">({{vendor.user?.firstName}} {{vendor.user?.lastName}})</span></div>
                 </div>
               </td>
             </ng-container>
             <ng-container matColumnDef="email">
               <th mat-header-cell *matHeaderCellDef>Email</th>
-              <td mat-cell *matCellDef="let vendor">{{vendor.email}}</td>
+              <td mat-cell *matCellDef="let vendor">{{vendor.user?.email || vendor.businessEmail}}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let vendor">
+                <mat-chip-set>
+                  <mat-chip *ngIf="vendor.user && !vendor.user.isActive" style="background: #ffebee; color: #f44336;">Blocked</mat-chip>
+                  <mat-chip *ngIf="(vendor.user?.isActive ?? true) && !vendor.isVerified" style="background: #fff8e1; color: #ffb300;">Pending</mat-chip>
+                  <mat-chip *ngIf="(vendor.user?.isActive ?? true) && vendor.isVerified" style="background: #e8f5e9; color: #4caf50;">Active</mat-chip>
+                </mat-chip-set>
+              </td>
             </ng-container>
             <ng-container matColumnDef="products">
               <th mat-header-cell *matHeaderCellDef>Products</th>
-              <td mat-cell *matCellDef="let vendor">{{vendor.totalProducts}}</td>
+              <td mat-cell *matCellDef="let vendor">{{vendor.totalProducts || 0}}</td>
             </ng-container>
             <ng-container matColumnDef="sales">
               <th mat-header-cell *matHeaderCellDef>Sales</th>
-              <td mat-cell *matCellDef="let vendor">{{vendor.totalSales | number}}</td>
+              <td mat-cell *matCellDef="let vendor">{{vendor.totalSales || 0 | number}}</td>
             </ng-container>
 
             <ng-container matColumnDef="actions">
@@ -56,9 +66,19 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
                     <span>View Details</span>
                   </button>
 
-                  <button mat-menu-item (click)="rejectVendor(vendor.id)">
+                  <button mat-menu-item (click)="rejectVendor(vendor.id)" *ngIf="vendor.user?.isActive">
                     <mat-icon color="warn">block</mat-icon>
                     <span>Reject / Block Vendor</span>
+                  </button>
+
+                  <button mat-menu-item (click)="unblockVendor(vendor.user._id)" *ngIf="vendor.user && !vendor.user.isActive">
+                    <mat-icon color="primary">restore</mat-icon>
+                    <span>Unblock Vendor</span>
+                  </button>
+
+                  <button mat-menu-item (click)="approveVendor(vendor.id)" *ngIf="!vendor.isVerified && vendor.user?.isActive">
+                    <mat-icon color="primary">check_circle</mat-icon>
+                    <span>Approve Vendor</span>
                   </button>
                 </mat-menu>
               </td>
@@ -90,7 +110,7 @@ export class AdminVendorsComponent implements OnInit {
   private dialog = inject(MatDialog);
 
   vendors = signal<any[]>([]);
-  displayedColumns = ['store', 'email', 'products', 'sales', 'actions'];
+  displayedColumns = ['store', 'email', 'status', 'products', 'sales', 'actions'];
 
   ngOnInit(): void {
     this.loadVendors();
@@ -124,6 +144,27 @@ export class AdminVendorsComponent implements OnInit {
       if (reason) {
         this.apiData.rejectVendor(vendorId, reason).subscribe(() => {
           this.snackBar.open('Vendor rejected', 'Close', { duration: 3000 });
+          this.loadVendors();
+        });
+      }
+    });
+  }
+
+  unblockVendor(userId: any): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Unblock Vendor',
+        message: 'Are you sure you want to unblock this vendor?',
+        okText: 'Unblock',
+        color: 'primary'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirm => {
+      if (confirm) {
+        this.apiData.updateUserStatus(userId, true).subscribe(() => {
+          this.snackBar.open('Vendor unblocked successfully', 'Close', { duration: 3000 });
           this.loadVendors();
         });
       }

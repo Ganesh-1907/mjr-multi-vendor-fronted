@@ -77,7 +77,13 @@ export class LoginComponent implements OnInit {
         });
       })
       .catch(err => {
-        this.snackBar.open(err, 'Close', { duration: 4000 });
+        let msg = err;
+        if (err === 'VENDOR_PENDING_APPROVAL') {
+          msg = 'Your vendor account is pending admin approval.';
+        } else if (err === 'Account is deactivated. Contact support.') {
+          msg = 'Your account has been blocked or rejected. Please contact support.';
+        }
+        this.snackBar.open(msg, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
         this.isLoading.set(false);
       });
   }

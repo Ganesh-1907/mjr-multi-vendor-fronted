@@ -106,13 +106,7 @@ export class VendorStoreComponent implements OnInit {
       return;
     }
 
-    const vendorId = Number(id);
-    if (isNaN(vendorId)) {
-      this.vendor.set(null);
-      return;
-    }
-
-    this.apiData.getVendorById(vendorId).subscribe({
+    this.apiData.getVendorById(id as any).subscribe({
       next: (v) => {
         this.vendor.set(v);
         this.loadVendorProducts(v.id);

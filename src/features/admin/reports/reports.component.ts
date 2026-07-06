@@ -55,9 +55,9 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
       <div class="export-section">
         <h2>Export Data</h2>
         <div class="export-buttons">
-          <button mat-raised-button><mat-icon>file_download</mat-icon> Export Orders</button>
-          <button mat-raised-button><mat-icon>file_download</mat-icon> Export Customers</button>
-          <button mat-raised-button><mat-icon>file_download</mat-icon> Export Products</button>
+          <button mat-raised-button (click)="exportOrders()"><mat-icon>file_download</mat-icon> Export Orders</button>
+          <button mat-raised-button (click)="exportCustomers()"><mat-icon>file_download</mat-icon> Export Customers</button>
+          <button mat-raised-button (click)="exportProducts()"><mat-icon>file_download</mat-icon> Export Products</button>
         </div>
       </div>
     </div>
@@ -100,6 +100,57 @@ export class AdminReportsComponent implements OnInit {
       if (data?.totalCustomers) this.customerCount.set(data.totalCustomers);
       if (data?.monthlyRevenue) this.monthlyData.set(data.monthlyRevenue);
     });
-    this.apiDataService.getOrders().subscribe(data => this.orders.set(data));
+    this.apiDataService.getAdminOrders().subscribe(data => this.orders.set(data));
+  }
+
+  exportOrders(): void {
+    const data = this.orders().map(o => ({
+      OrderNumber: o.orderNumber,
+      Customer: o.customerName,
+      Amount: o.totalAmount,
+      Status: o.status,
+      Date: new Date(o.createdAt).toLocaleDateString()
+    }));
+    this.downloadCSV(data, 'orders_export.csv');
+  }
+
+  exportCustomers(): void {
+    this.apiDataService.getAdminUsers().subscribe(users => {
+      const customers = users.filter(u => u.role?.name === 'CUSTOMER');
+      const data = customers.map(c => ({
+        Name: `${c.firstName} ${c.lastName}`,
+        Email: c.email,
+        Joined: new Date(c.createdAt).toLocaleDateString()
+      }));
+      this.downloadCSV(data, 'customers_export.csv');
+    });
+  }
+
+  exportProducts(): void {
+    this.apiDataService.getAdminProducts().subscribe(products => {
+      const data = products.map(p => ({
+        Name: p.name,
+        Category: p.category?.name || '',
+        Vendor: p.vendor?.storeName || '',
+        Status: p.status
+      }));
+      this.downloadCSV(data, 'products_export.csv');
+    });
+  }
+
+  private downloadCSV(data: any[], filename: string): void {
+    if (!data.length) return;
+    const headers = Object.keys(data[0]).join(',');
+    const csvRows = data.map(row => 
+      Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
+    );
+    const csvContent = [headers, ...csvRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 }
