@@ -37,6 +37,8 @@ export interface Product {
   status: string;
   isFeatured: boolean;
   isTrending: boolean;
+  category?: { id: number; name: string; slug: string };
+  vendor?: { id: number; storeName: string; storeSlug: string };
 }
 
 export interface ProductPreview {
@@ -126,6 +128,7 @@ export interface Order {
   id: number;
   orderNumber: string;
   userId: number;
+  customerName?: string;
   status: string;
   subtotal: number;
   discountAmount: number;
