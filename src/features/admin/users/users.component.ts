@@ -39,7 +39,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
             <ng-container matColumnDef="id">
               <th mat-header-cell *matHeaderCellDef>Customer ID</th>
               <td mat-cell *matCellDef="let customer">
-                <span class="customer-id">#{{customer.id}}</span>
+                <span class="customer-id">#{{customer._id}}</span>
               </td>
             </ng-container>
             <ng-container matColumnDef="name">
@@ -161,7 +161,7 @@ export class AdminUsersComponent implements OnInit {
     }
     this.filteredUsers.set(
       this.users().filter((u: any) =>
-        String(u.id).includes(query) ||
+        String(u._id).includes(query) ||
         u.firstName?.toLowerCase().includes(query) ||
         u.lastName?.toLowerCase().includes(query) ||
         u.email?.toLowerCase().includes(query) ||
@@ -178,7 +178,7 @@ export class AdminUsersComponent implements OnInit {
     if (!confirm(`${action} customer "${customer.firstName} ${customer.lastName}"?`)) {
       return;
     }
-    this.apiData.updateUserStatus(customer.id, isActive).subscribe({
+    this.apiData.updateUserStatus(customer._id, isActive).subscribe({
       next: () => {
         this.snackBar.open(
           `Customer ${isActive ? 'activated' : 'blocked'} successfully`,
@@ -186,7 +186,7 @@ export class AdminUsersComponent implements OnInit {
           { duration: 3000 }
         );
         this.users.update(list =>
-          list.map((u: any) => u.id === customer.id ? { ...u, isActive } : u)
+          list.map((u: any) => u._id === customer._id ? { ...u, isActive } : u)
         );
         this.applyFilter({ target: { value: this.searchQuery() } } as any);
       },

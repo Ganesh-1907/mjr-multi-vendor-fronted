@@ -6,6 +6,7 @@
     "prestart": "node tools/set-env.js",
     "prebuild": "node tools/set-env.js",
     "start": "ng serve",
+    "dev": "npm start",
     "build": "ng build"
   },
   "dependencies": {

@@ -16,6 +16,23 @@ export class ApiService {
   private http = inject(HttpClient);
   private baseUrl = environment.apiBaseUrl;
 
+  private mapIds(data: any): any {
+    if (data === null || typeof data !== 'object') return data;
+    if (Array.isArray(data)) {
+      return data.map(item => this.mapIds(item));
+    }
+    const mapped: any = {};
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        mapped[key] = this.mapIds(data[key]);
+      }
+    }
+    if (mapped._id !== undefined && mapped.id === undefined) {
+      mapped.id = mapped._id;
+    }
+    return mapped;
+  }
+
   get<T>(path: string, params?: Record<string, string | number | boolean | undefined | null>): Observable<T> {
     let httpParams = new HttpParams();
     if (params) {
@@ -26,37 +43,41 @@ export class ApiService {
       });
     }
     return this.http.get<ApiResponse<T>>(`${this.baseUrl}${path}`, { params: httpParams })
-      .pipe(map(res => res.data));
+      .pipe(map(res => this.mapIds(res.data)));
   }
 
   post<T>(path: string, body: any): Observable<T> {
     return this.http.post<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map(res => res.data));
+      .pipe(map(res => this.mapIds(res.data)));
   }
 
   put<T>(path: string, body: any): Observable<T> {
     return this.http.put<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map(res => res.data));
+      .pipe(map(res => this.mapIds(res.data)));
   }
 
   delete<T>(path: string): Observable<T> {
     return this.http.delete<ApiResponse<T>>(`${this.baseUrl}${path}`)
-      .pipe(map(res => res.data));
+      .pipe(map(res => this.mapIds(res.data)));
   }
 
   getRaw<T>(path: string): Observable<ApiResponse<T>> {
-    return this.http.get<ApiResponse<T>>(`${this.baseUrl}${path}`);
+    return this.http.get<ApiResponse<T>>(`${this.baseUrl}${path}`)
+      .pipe(map(res => this.mapIds(res)));
   }
 
   postRaw<T>(path: string, body: any): Observable<ApiResponse<T>> {
-    return this.http.post<ApiResponse<T>>(`${this.baseUrl}${path}`, body);
+    return this.http.post<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
+      .pipe(map(res => this.mapIds(res)));
   }
 
   putRaw<T>(path: string, body: any): Observable<ApiResponse<T>> {
-    return this.http.put<ApiResponse<T>>(`${this.baseUrl}${path}`, body);
+    return this.http.put<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
+      .pipe(map(res => this.mapIds(res)));
   }
 
   deleteRaw<T>(path: string): Observable<ApiResponse<T>> {
-    return this.http.delete<ApiResponse<T>>(`${this.baseUrl}${path}`);
+    return this.http.delete<ApiResponse<T>>(`${this.baseUrl}${path}`)
+      .pipe(map(res => this.mapIds(res)));
   }
 }
