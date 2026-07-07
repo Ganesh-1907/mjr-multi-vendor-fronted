@@ -1,20 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 
-// Read .env file
-const envPath = path.join(__dirname, '..', '.env');
-const envContent = fs.readFileSync(envPath, 'utf-8');
-
-const BACKEND_URL = envContent
-  .split('\n')
-  .find(line => line.startsWith('BACKEND_URL='))
-  ?.split('=')
-  .slice(1)
-  .join('=')
-  ?.trim();
+let BACKEND_URL = process.env.BACKEND_URL;
 
 if (!BACKEND_URL) {
-  console.error('BACKEND_URL not found in .env');
+  const envPath = path.join(__dirname, '..', '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    BACKEND_URL = envContent
+      .split('\n')
+      .find(line => line.startsWith('BACKEND_URL='))
+      ?.split('=')
+      .slice(1)
+      .join('=')
+      ?.trim();
+  }
+}
+
+if (!BACKEND_URL) {
+  console.error('BACKEND_URL not found. Set it via environment variable or .env file.');
   process.exit(1);
 }
 
