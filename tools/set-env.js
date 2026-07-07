@@ -7,13 +7,8 @@ if (!BACKEND_URL) {
   const envPath = path.join(__dirname, '..', '.env');
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8');
-    BACKEND_URL = envContent
-      .split('\n')
-      .find(line => line.startsWith('BACKEND_URL='))
-      ?.split('=')
-      .slice(1)
-      .join('=')
-      ?.trim();
+    const match = envContent.match(/^BACKEND_URL\s*=\s*(.+)$/m);
+    BACKEND_URL = match ? match[1].trim() : undefined;
   }
 }
 
