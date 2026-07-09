@@ -1,5 +1,5 @@
 <mat-sidenav-container class="dashboard-container">
-  <mat-sidenav #sidenav [opened]="isSidenavOpen" mode="side" class="sidenav" fixedInViewport="true">
+  <mat-sidenav #sidenav [opened]="isSidenavOpen" [mode]="isMobile ? 'over' : 'side'" class="sidenav" fixedInViewport="true">
     <div class="sidenav-header">
       <a routerLink="/" class="logo">
         <mat-icon>shopping_bag</mat-icon>
@@ -9,7 +9,7 @@
 
     <mat-nav-list>
       @for (item of menuItems(); track item.path) {
-        <a mat-list-item [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <a mat-list-item [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeSidenavOnMobile()">
           <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
           <span matListItemTitle>{{item.label}}</span>
         </a>
@@ -18,7 +18,7 @@
 
     <div class="sidenav-footer">
       <mat-divider></mat-divider>
-      <a mat-list-item routerLink="/" class="back-to-store">
+      <a mat-list-item routerLink="/" class="back-to-store" (click)="closeSidenavOnMobile()">
         <mat-icon matListItemIcon>storefront</mat-icon>
         <span matListItemTitle>Back to Store</span>
       </a>

@@ -184,17 +184,6 @@
 }
 
 @media (max-width: 768px) {
-  .sidenav {
-    width: 72px;
-
-    .sidenav-header .logo span,
-    .mat-mdc-list-item .mdc-list-item__primary-text,
-    .sidenav-footer .mdc-list-item__primary-text,
-    .logo-text {
-      display: none !important;
-    }
-  }
-
   .dashboard-content {
     padding: 16px;
   }

@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -22,14 +22,33 @@ import { CartService } from '../../core/services/cart.service';
   templateUrl: './dashboard-layout.component.html',
   styleUrl: './dashboard-layout.component.scss'
 })
-export class DashboardLayoutComponent {
+export class DashboardLayoutComponent implements OnInit {
   auth = inject(AuthService);
   theme = inject(ThemeService);
   cart = inject(CartService);
   router = inject(Router);
   snackBar = inject(MatSnackBar);
 
+  isMobile = false;
   isSidenavOpen = true;
+
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.checkScreenSize();
+  }
+
+  ngOnInit() {
+    this.checkScreenSize();
+  }
+
+  checkScreenSize() {
+    this.isMobile = window.innerWidth <= 768;
+    if (this.isMobile) {
+      this.isSidenavOpen = false;
+    } else {
+      this.isSidenavOpen = true;
+    }
+  }
 
   userInitials = computed(() => {
     const user = this.auth.currentUser();
@@ -110,5 +129,11 @@ export class DashboardLayoutComponent {
 
   toggleSidenav(): void {
     this.isSidenavOpen = !this.isSidenavOpen;
+  }
+
+  closeSidenavOnMobile(): void {
+    if (this.isMobile) {
+      this.isSidenavOpen = false;
+    }
   }
 }
