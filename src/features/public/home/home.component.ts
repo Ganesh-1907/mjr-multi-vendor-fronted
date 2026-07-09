@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -28,6 +28,7 @@ import { ProductCardComponent } from '../../../shared/components/product-card/pr
 export class HomeComponent implements OnInit, OnDestroy {
   private apiData = inject(ApiDataService);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
   banners = signal<Banner[]>([]);
   heroBanners = computed(() => this.banners().filter(b => b.position === 'HOME_HERO' || !b.position));
@@ -280,6 +281,25 @@ export class HomeComponent implements OnInit, OnDestroy {
     }).catch(() => {
       this.snackBar.open('Failed to copy coupon code.', 'Close', { duration: 3000 });
     });
+  }
+
+  navigate(url: string): void {
+    if (!url) {
+      url = '/products';
+    }
+    if (url.includes('?')) {
+      const parts = url.split('?');
+      const path = parts[0];
+      const queryStr = parts[1];
+      const queryParams: any = {};
+      queryStr.split('&').forEach(param => {
+        const [key, val] = param.split('=');
+        if (key) queryParams[key] = val || '';
+      });
+      this.router.navigate([path], { queryParams });
+    } else {
+      this.router.navigate([url]);
+    }
   }
 
   handleImageError(event: Event): void {

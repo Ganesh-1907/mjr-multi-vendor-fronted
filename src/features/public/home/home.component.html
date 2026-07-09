@@ -10,10 +10,10 @@
               <h1>{{banner.title}}</h1>
               <p>{{banner.subtitle}}</p>
               @if (banner.buttonText) {
-                <a mat-flat-button class="banner-btn" [routerLink]="banner.linkUrl">
+                <button mat-flat-button class="banner-btn" (click)="navigate(banner.linkUrl)">
                   {{banner.buttonText}}
                   <mat-icon>arrow_forward</mat-icon>
-                </a>
+                </button>
               }
             </div>
           </div>
@@ -172,10 +172,10 @@
             <h3>{{banner.title}}</h3>
             <p>{{banner.subtitle}}</p>
             @if (banner.buttonText) {
-              <a mat-flat-button class="promo-btn" [routerLink]="banner.linkUrl">
+              <button mat-flat-button class="promo-btn" (click)="navigate(banner.linkUrl)">
                 {{banner.buttonText}}
                 <mat-icon>arrow_forward</mat-icon>
-              </a>
+              </button>
             }
           </div>
         </div>

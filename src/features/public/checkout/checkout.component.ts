@@ -168,7 +168,7 @@ export class CheckoutComponent implements OnInit {
       prefill: {
         name: (this.auth.currentUser()?.firstName || '') + ' ' + (this.auth.currentUser()?.lastName || ''),
         email: this.auth.currentUser()?.email || '',
-        contact: this.addressForm.value.phone
+        contact: '+91' + String(this.addressForm.value.phone || '').trim().replace(/\s/g, '')
       },
       theme: {
         color: '#1a237e'
