@@ -58,9 +58,12 @@ export class ProductCardComponent {
       return;
     }
 
-    this.cart.addToCart(this.product.id, this.primaryVariant.id);
-    this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 }).onAction().subscribe(() => {
-      this.router.navigate(['/cart']);
+    this.cart.addToCart(this.product.id, this.primaryVariant.id).then(() => {
+      this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 }).onAction().subscribe(() => {
+        this.router.navigate(['/cart']);
+      });
+    }).catch(err => {
+      this.snackBar.open(err, 'Close', { duration: 3000 });
     });
   }
 
@@ -79,9 +82,12 @@ export class ProductCardComponent {
       return;
     }
 
-    this.wishlist.toggleWishlist(this.product.id);
-    const message = this.wishlist.isInWishlist(this.product.id) ? 'Added to wishlist' : 'Removed from wishlist';
-    this.snackBar.open(message, 'Close', { duration: 2000 });
+    this.wishlist.toggleWishlist(this.product.id).then(() => {
+      const message = this.wishlist.isInWishlist(this.product.id) ? 'Added to wishlist' : 'Removed from wishlist';
+      this.snackBar.open(message, 'Close', { duration: 2000 });
+    }).catch(err => {
+      this.snackBar.open(err, 'Close', { duration: 3000 });
+    });
   }
 
   isInWishlist(): boolean {

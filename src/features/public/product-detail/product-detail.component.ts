@@ -146,8 +146,13 @@ export class ProductDetailComponent implements OnInit {
       return;
     }
 
-    this.cart.addToCart(prod.id, variant.id, this.quantity());
-    this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 });
+    this.cart.addToCart(prod.id, variant.id, this.quantity()).then(() => {
+      this.snackBar.open('Added to cart', 'View Cart', { duration: 3000 }).onAction().subscribe(() => {
+        this.router.navigate(['/cart']);
+      });
+    }).catch(err => {
+      this.snackBar.open(err, 'Close', { duration: 3000 });
+    });
   }
 
   buyNow(): void {
@@ -189,6 +194,8 @@ export class ProductDetailComponent implements OnInit {
     this.wishlist.toggleWishlist(prod.id).then(() => {
       const message = this.wishlist.isInWishlist(prod.id) ? 'Added to wishlist' : 'Removed from wishlist';
       this.snackBar.open(message, 'Close', { duration: 2000 });
+    }).catch(err => {
+      this.snackBar.open(err, 'Close', { duration: 3000 });
     });
   }
 
