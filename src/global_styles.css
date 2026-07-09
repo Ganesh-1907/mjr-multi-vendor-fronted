@@ -381,38 +381,11 @@ img {
 
 /* GLOBAL MOBILE RESPONSIVENESS */
 @media (max-width: 768px) {
-  .mat-mdc-table {
+  .table-responsive, .mat-mdc-table {
     display: block;
     width: 100%;
     overflow-x: auto;
-  }
-  .mat-mdc-row, .mat-mdc-header-row {
-    display: flex;
-    flex-direction: column;
-    min-height: auto;
-    padding: 12px;
-  }
-  .mat-mdc-cell, .mat-mdc-header-cell {
-    display: block;
-    width: 100%;
-    text-align: left;
-    border: none;
-    padding: 4px 0;
-  }
-  .mat-mdc-header-row {
-    display: none; /* hide headers on mobile for tables */
-  }
-  .mat-mdc-row {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    margin-bottom: 12px;
-  }
-  .mat-mdc-cell::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: var(--text-primary);
-    display: inline-block;
-    width: 120px;
+    white-space: nowrap;
   }
   .flex-row {
     flex-direction: column !important;
