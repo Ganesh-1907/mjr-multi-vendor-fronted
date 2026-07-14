@@ -126,6 +126,7 @@ export interface Review {
 
 export interface Order {
   id: number;
+  _id?: string | number;
   orderNumber: string;
   userId: number;
   customerName?: string;

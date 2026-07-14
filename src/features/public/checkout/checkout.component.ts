@@ -39,6 +39,18 @@ export class CheckoutComponent implements OnInit {
   selectedAddress = signal<any>(null);
 
   ngOnInit(): void {
+    const state = history.state;
+    if (state && state.buyNowItem) {
+      this.buyNowItem.set(state.buyNowItem);
+    } else {
+      const localBuyNow = localStorage.getItem('buyNowItem');
+      if (localBuyNow) {
+        try {
+          this.buyNowItem.set(JSON.parse(localBuyNow));
+        } catch (e) {}
+        localStorage.removeItem('buyNowItem');
+      }
+    }
     this.loadSavedAddresses();
   }
 
@@ -88,13 +100,31 @@ export class CheckoutComponent implements OnInit {
   discount = signal(0);
   appliedCoupon = signal('');
 
-  shippingCost = computed(() => this.cart.subtotal() >= 500 ? 0 : 49);
-  tax = computed(() => Math.round(this.cart.subtotal() * 0.18));
-  total = computed(() => this.cart.subtotal() - this.discount() + this.shippingCost() + this.tax());
+  buyNowItem = signal<any>(null);
+
+  checkoutItems = computed(() => {
+    const buyNow = this.buyNowItem();
+    if (buyNow) {
+      return [buyNow];
+    }
+    return this.cart.itemsWithDetails();
+  });
+
+  checkoutSubtotal = computed(() => {
+    const buyNow = this.buyNowItem();
+    if (buyNow) {
+      return buyNow.subtotal;
+    }
+    return this.cart.subtotal();
+  });
+
+  shippingCost = computed(() => this.checkoutSubtotal() >= 500 ? 0 : 49);
+  tax = computed(() => Math.round(this.checkoutSubtotal() * 0.18));
+  total = computed(() => this.checkoutSubtotal() - this.discount() + this.shippingCost() + this.tax());
 
   applyCoupon(): void {
     if (!this.couponCode.trim()) return;
-    this.apiData.validateCoupon(this.couponCode.trim(), this.cart.subtotal()).subscribe({
+    this.apiData.validateCoupon(this.couponCode.trim(), this.checkoutSubtotal()).subscribe({
       next: (res) => {
         this.discount.set(res.discountAmount);
         this.appliedCoupon.set(res.coupon.code);
@@ -210,7 +240,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   placeOrderAfterPayment(): void {
-    const items = this.cart.items().map(item => ({
+    const items = this.checkoutItems().map(item => ({
       productId: item.productId,
       variantId: item.variantId,
       quantity: item.quantity
@@ -229,7 +259,9 @@ export class CheckoutComponent implements OnInit {
         this.placedOrder.set(order);
         this.orderComplete.set(true);
         this.orderProcessing.set(false);
-        this.cart.clearCart();
+        if (!this.buyNowItem()) {
+          this.cart.clearCart();
+        }
         this.snackBar.open('Order placed successfully!', 'Close', { duration: 3000 });
       },
       error: (err) => {

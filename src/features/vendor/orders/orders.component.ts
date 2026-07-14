@@ -84,7 +84,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                  [class.selected-row]="selectedOrder()?.id === row.id"
+                  [class.selected-row]="(selectedOrder()?.id || selectedOrder()?._id) === (row.id || row._id)"
                   (click)="selectOrder(row)"></tr>
             </table>
           </mat-card-content>
@@ -430,15 +430,15 @@ export class VendorOrdersComponent implements OnInit {
   loadOrders(): void {
     this.apiData.getVendorOrders(0).subscribe({
       next: (data) => {
-        const sorted = data.sort((a: any, b: any) => Number(b.id) - Number(a.id));
+        const sorted = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.orders.set(sorted);
         
         const currentSelected = this.selectedOrder();
         if (currentSelected) {
-          const updated = sorted.find((o: any) => o.id === currentSelected.id);
+          const updated = sorted.find((o: any) => (o.id || o._id) === (currentSelected.id || currentSelected._id));
           if (updated) {
             this.selectedOrder.set(updated);
-            this.loadDetailedOrder(updated.id);
+            this.loadDetailedOrder(Number(updated.id || updated._id));
           }
         }
       },
@@ -448,7 +448,7 @@ export class VendorOrdersComponent implements OnInit {
 
   selectOrder(order: any): void {
     this.selectedOrder.set(order);
-    this.loadDetailedOrder(order.id);
+    this.loadDetailedOrder(Number(order.id || order._id));
   }
 
   loadDetailedOrder(orderId: number): void {
@@ -487,7 +487,7 @@ export class VendorOrdersComponent implements OnInit {
 
     this.submitting.set(true);
     this.apiData.updateVendorOrderStatus(
-      order.id,
+      Number(order.id || order._id),
       this.modalStatus,
       this.modalDescription || `Order status updated to ${this.modalStatus} by vendor`,
       this.modalLocation

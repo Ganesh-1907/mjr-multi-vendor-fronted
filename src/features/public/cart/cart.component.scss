@@ -43,6 +43,10 @@
       object-fit: cover;
       border-radius: 8px;
     }
+    &.clickable:hover {
+      opacity: 0.85;
+      transition: opacity 0.2s ease-in-out;
+    }
   }
 
   .item-details {
@@ -50,6 +54,10 @@
       font-size: 16px;
       font-weight: 500;
       margin-bottom: 4px;
+      &.clickable:hover {
+        color: #1a237e;
+        text-decoration: underline;
+      }
     }
 
     .variant {
@@ -251,4 +259,8 @@
       right: 12px;
     }
   }
+}
+
+.clickable {
+  cursor: pointer;
 }

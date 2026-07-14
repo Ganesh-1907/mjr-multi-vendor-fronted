@@ -156,24 +156,31 @@ export class ProductDetailComponent implements OnInit {
   }
 
   buyNow(): void {
+    const variant = this.selectedVariant();
+    const prod = this.product();
+    if (!prod || !variant) return;
+
+    const buyNowItem = {
+      id: `buynow_${Date.now()}`,
+      productId: prod.id,
+      variantId: variant.id,
+      quantity: this.quantity(),
+      productName: prod.name,
+      productImageUrl: this.primaryImage(),
+      subtotal: variant.price * this.quantity(),
+      price: variant.price,
+      variantName: variant.name
+    };
+
     if (!this.auth.isAuthenticated()) {
-      const variant = this.selectedVariant();
-      const prod = this.product();
-      if (prod && variant) {
-        localStorage.setItem('pending_action', JSON.stringify({
-          type: 'addToCart',
-          productId: prod.id,
-          variantId: variant.id,
-          quantity: this.quantity()
-        }));
-      }
+      localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
       this.router.navigate(['/auth/login'], {
         queryParams: { role: 'customer', redirectTo: '/checkout' }
       });
       return;
     }
-    this.addToCart();
-    this.router.navigate(['/checkout']);
+
+    this.router.navigate(['/checkout'], { state: { buyNowItem } });
   }
 
   toggleWishlist(): void {

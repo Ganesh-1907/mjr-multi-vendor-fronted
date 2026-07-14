@@ -9,11 +9,11 @@
       <div class="cart-items">
         @for (item of cart.itemsWithDetails(); track item.id) {
           <mat-card class="cart-item">
-            <div class="item-image">
+            <div class="item-image clickable" [routerLink]="['/products', item.productSlug]">
               <img [src]="item.productImageUrl" [alt]="item.productName">
             </div>
             <div class="item-details">
-              <h3>{{item.productName}}</h3>
+              <h3 class="clickable hover-primary" [routerLink]="['/products', item.productSlug]">{{item.productName}}</h3>
               <p class="variant">{{item.variantName}}</p>
               <p class="vendor">Sold by: {{cart.getVendorById(item.vendorId!)}}</p>
               <div class="item-price">INR {{item.price | number:'1.0-0'}}</div>

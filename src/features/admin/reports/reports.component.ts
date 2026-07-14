@@ -67,7 +67,8 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
     .page-header { margin-bottom: 24px; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .stat { display: flex; align-items: center; gap: 16px; padding: 16px; }
-    .stat mat-icon { font-size: 36px; color: #1a237e; }
+    .stat > div { display: flex; flex-direction: column; }
+    .stat mat-icon { font-size: 36px; color: #1a237e; width: 36px; height: 36px; }
     .stat-value { font-size: 24px; font-weight: 700; }
     .stat-label { font-size: 13px; color: #757575; }
     .chart-card { margin-bottom: 24px; }

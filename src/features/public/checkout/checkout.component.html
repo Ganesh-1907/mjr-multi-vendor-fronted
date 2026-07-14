@@ -94,7 +94,7 @@
           </mat-card-header>
           <mat-card-content>
             <div class="summary-items">
-              @for (item of cart.itemsWithDetails(); track item.id) {
+              @for (item of checkoutItems(); track item.id) {
                 <div class="summary-item">
                   <img [src]="item.productImageUrl" [alt]="item.productName">
                   <div class="item-info">
@@ -110,7 +110,7 @@
 
             <div class="summary-row">
               <span>Subtotal</span>
-              <span>INR {{cart.subtotal() | number:'1.0-0'}}</span>
+              <span>INR {{checkoutSubtotal() | number:'1.0-0'}}</span>
             </div>
             <div class="summary-row">
               <span>Shipping</span>

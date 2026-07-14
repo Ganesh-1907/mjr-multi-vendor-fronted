@@ -111,7 +111,7 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
-                  [class.selected-row]="selectedOrder()?.id === row.id"
+                  [class.selected-row]="(selectedOrder()?.id || selectedOrder()?._id) === (row.id || row._id)"
                   (click)="selectOrder(row)"></tr>
             </table>
 
@@ -518,15 +518,15 @@ export class AdminOrdersComponent implements OnInit {
   loadOrders(): void {
     this.apiData.getAdminOrders().subscribe({
       next: (data) => {
-        // Sort orders descending by ID or date so latest is first
-        const sorted = data.sort((a, b) => Number(b.id) - Number(a.id));
+        // Sort orders descending by date so latest is first
+        const sorted = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.orders.set(sorted);
         this.applyFilter();
         
         // If we have a selected order, update its reference in case data refreshed
         const currentSelected = this.selectedOrder();
         if (currentSelected) {
-          const updated = sorted.find(o => o.id === currentSelected.id);
+          const updated = sorted.find((o: any) => (o.id || o._id) === (currentSelected.id || currentSelected._id));
           if (updated) {
             this.selectedOrder.set(updated);
           }
@@ -549,7 +549,7 @@ export class AdminOrdersComponent implements OnInit {
       const q = this.searchQuery.toLowerCase().trim();
       result = result.filter(o => 
         o.orderNumber?.toLowerCase().includes(q) ||
-        String(o.id).includes(q) ||
+        String(o.id || (o as any)._id).includes(q) ||
         (o as any).shippingFullName?.toLowerCase().includes(q) ||
         (o as any).shippingPhone?.includes(q)
       );
@@ -576,7 +576,7 @@ export class AdminOrdersComponent implements OnInit {
 
     this.submitting.set(true);
     this.apiData.updateAdminOrderStatus(
-      Number(order.id),
+      (order.id || (order as any)._id) as number,
       this.newStatus,
       this.trackingDescription || `Order status updated to ${this.newStatus}`,
       this.trackingLocation
@@ -612,7 +612,7 @@ export class AdminOrdersComponent implements OnInit {
 
     this.submitting.set(true);
     this.apiData.updateAdminOrderStatus(
-      Number(order.id),
+      (order.id || order._id) as number,
       this.modalStatus,
       this.modalDescription || `Order status updated to ${this.modalStatus} by admin`,
       this.modalLocation
