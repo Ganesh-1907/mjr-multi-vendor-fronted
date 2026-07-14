@@ -105,7 +105,7 @@ export interface Coupon {
   minOrderAmount: number;
   maxDiscountAmount?: number;
   usageLimit: number;
-  usageCount: number;
+  usedCount: number;
   isActive: boolean;
   validFrom: string;
   validUntil: string;

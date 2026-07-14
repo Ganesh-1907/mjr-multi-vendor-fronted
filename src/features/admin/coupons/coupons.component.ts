@@ -40,7 +40,7 @@ import { ApiService } from '../../../core/services/api.service';
             </ng-container>
             <ng-container matColumnDef="usage">
               <th mat-header-cell *matHeaderCellDef>Usage</th>
-              <td mat-cell *matCellDef="let coupon">{{coupon.usageCount}} / {{coupon.usageLimit}}</td>
+              <td mat-cell *matCellDef="let coupon">{{coupon.usedCount}} / {{coupon.usageLimit}}</td>
             </ng-container>
             <ng-container matColumnDef="validity">
               <th mat-header-cell *matHeaderCellDef>Valid Until</th>
