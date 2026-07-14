@@ -485,6 +485,13 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
+    @media (max-width: 768px) {
+      .header-actions { flex-direction: column; width: 100%; align-items: stretch; }
+      .search-field, .filter-field { width: 100%; }
+      .form-row { flex-direction: column; gap: 8px; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .grid-item.full-width { grid-column: 1; }
+    }
   `]
 })
 export class AdminOrdersComponent implements OnInit {

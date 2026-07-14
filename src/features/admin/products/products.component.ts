@@ -146,6 +146,12 @@ import { ApiDataService, Product, Vendor, Category } from '../../../core/service
     .products-table img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); }
     mat-chip { font-size: 12px; min-height: 24px; text-transform: capitalize; }
     .no-records { padding: 32px; text-align: center; color: #757575; font-style: italic; }
+    @media (max-width: 768px) {
+      .filters-row { flex-direction: column; align-items: stretch; }
+      .filter-select { width: 100%; min-width: unset; }
+      .filter-actions { margin-left: 0; width: 100%; justify-content: space-between; }
+      .filter-actions button { flex: 1; }
+    }
   `]
 })
 export class AdminProductsComponent implements OnInit {

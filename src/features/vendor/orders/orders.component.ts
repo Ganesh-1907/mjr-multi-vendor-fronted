@@ -402,6 +402,13 @@ import { ApiDataService } from '../../../core/services/api-data.service';
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
+    @media (max-width: 768px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .grid-item.full-width { grid-column: 1; }
+      .orders-page { padding: 12px; }
+      .item-row { flex-wrap: wrap; }
+      .item-price { width: 100%; text-align: left; }
+    }
   `]
 })
 export class VendorOrdersComponent implements OnInit {

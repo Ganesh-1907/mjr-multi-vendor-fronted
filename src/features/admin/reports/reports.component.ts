@@ -79,6 +79,12 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
     .export-section h2 { margin-bottom: 16px; }
     .export-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
     .export-buttons button { display: flex; align-items: center; gap: 8px; }
+    @media (max-width: 768px) {
+      .stats-grid { gap: 12px; }
+      .chart-bars { height: 150px; }
+      .export-buttons { flex-direction: column; }
+      .export-buttons button { width: 100%; }
+    }
   `]
 })
 export class AdminReportsComponent implements OnInit {
