@@ -400,3 +400,7 @@ img {
     min-width: 90vw !important;
   }
 }
+
+body.body-no-scroll {
+  overflow: hidden !important;
+}

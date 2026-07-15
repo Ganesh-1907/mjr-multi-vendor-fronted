@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -115,7 +115,15 @@ export class ProductsComponent implements OnInit {
   }
 
   toggleMobileFilters(): void {
-    this.isMobileFiltersOpen.update(v => !v);
+    this.isMobileFiltersOpen.update(v => {
+      const isOpen = !v;
+      if (isOpen) {
+        document.body.classList.add('body-no-scroll');
+      } else {
+        document.body.classList.remove('body-no-scroll');
+      }
+      return isOpen;
+    });
   }
 
   updateSearch(value: string): void {
@@ -170,5 +178,9 @@ export class ProductsComponent implements OnInit {
     return !!(this.searchQuery() || this.selectedCategory() ||
       this.priceRange()[0] > 0 || this.priceRange()[1] < 200000 || this.selectedSort() || this.selectedRating() ||
       this.isFeaturedFilter() || this.isTrendingFilter());
+  }
+
+  ngOnDestroy(): void {
+    document.body.classList.remove('body-no-scroll');
   }
 }

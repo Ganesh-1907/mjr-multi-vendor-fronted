@@ -115,6 +115,35 @@
     }
   }
 
+  .toolbar-logo {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    margin-left: 8px;
+
+    &.show-logo {
+      display: flex;
+    }
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      color: var(--primary);
+    }
+    
+    @media (max-width: 400px) {
+      .logo-text {
+        font-size: 15px;
+      }
+    }
+  }
+
   .spacer {
     flex: 1;
   }
