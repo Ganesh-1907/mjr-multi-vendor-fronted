@@ -29,7 +29,7 @@ export class CartComponent implements OnInit {
     this.cart.loadCart();
   }
 
-  shippingCost = computed(() => this.cart.subtotal() >= 500 ? 0 : 49);
+  shippingCost = computed(() => 100);
   tax = computed(() => Math.round(this.cart.subtotal() * 0.18));
   total = computed(() => this.cart.subtotal() + this.shippingCost() + this.tax());
 

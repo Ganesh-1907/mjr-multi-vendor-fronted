@@ -118,7 +118,7 @@ export class CheckoutComponent implements OnInit {
     return this.cart.subtotal();
   });
 
-  shippingCost = computed(() => this.checkoutSubtotal() >= 500 ? 0 : 49);
+  shippingCost = computed(() => 100);
   tax = computed(() => Math.round(this.checkoutSubtotal() * 0.18));
   total = computed(() => this.checkoutSubtotal() - this.discount() + this.shippingCost() + this.tax());
 

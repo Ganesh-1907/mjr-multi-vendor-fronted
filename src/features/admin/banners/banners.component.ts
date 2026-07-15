@@ -284,6 +284,11 @@ import { UploadService } from '../../../core/services/upload.service';
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
+    @media (max-width: 600px) {
+      .form-row { flex-direction: column; gap: 12px; }
+      .half-width { width: 100%; }
+      .url-upload-row { flex-direction: column; align-items: stretch; }
+    }
   `]
 })
 export class AdminBannersComponent implements OnInit {
