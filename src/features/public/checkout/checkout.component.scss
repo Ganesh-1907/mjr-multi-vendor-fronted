@@ -418,6 +418,9 @@ form {
 }
 
 @media (max-width: 768px) {
+  .checkout-page {
+    padding: 16px;
+  }
   .order-success .order-details-container {
     grid-template-columns: 1fr;
   }

@@ -1197,6 +1197,20 @@
     display: none !important;
   }
 
+  .coupons-carousel {
+    padding: 0 36px;
+  }
+
+  .coupon-nav {
+    width: 34px;
+    height: 34px;
+  }
+
+  .coupon-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
   .categories-carousel {
     padding: 0 36px;
   }
@@ -1232,8 +1246,29 @@
   .categories-carousel {
     padding: 0 32px;
   }
+  
+  .coupons-carousel {
+    padding: 0 24px;
+  }
 
-  .cat-nav {
+  .coupon-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 16px;
+
+    .coupon-action {
+      border-left: none;
+      border-top: 1px dashed var(--border-light);
+      padding-left: 0;
+      padding-top: 16px;
+      width: 100%;
+      flex-direction: row;
+      justify-content: center;
+      gap: 16px;
+    }
+  }
+
+  .cat-nav, .coupon-nav {
     width: 30px;
     height: 30px;
   }

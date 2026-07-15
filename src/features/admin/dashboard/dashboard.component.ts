@@ -85,7 +85,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
     </div>
   `,
   styles: [`
-    .dashboard-home { max-width: 1200px; margin: 0 auto; }
+    .dashboard-home { max-width: 1200px; margin: 0 auto; padding: 24px; }
     .welcome-section { margin-bottom: 32px; }
     .welcome-section h1 { font-size: 28px; margin-bottom: 8px; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -96,7 +96,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
     .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); }
     .stat-label { font-size: 14px; color: var(--text-secondary); }
     .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px; }
-    table { width: 100%; border-collapse: collapse; }
+    table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; white-space: nowrap; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
     th { font-weight: 600; color: var(--text-secondary); }
     .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; text-transform: capitalize; }
@@ -107,7 +107,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
     .quick-actions h2 { font-size: 20px; margin-bottom: 16px; color: var(--text-primary); }
     .actions-grid { display: flex; gap: 12px; flex-wrap: wrap; }
     .actions-grid a { display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
-    @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } .dashboard-home { padding: 16px; } }
   `]
 })
 export class AdminDashboardComponent implements OnInit {

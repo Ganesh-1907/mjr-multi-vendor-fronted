@@ -250,7 +250,7 @@ export class ContactDetailDialogComponent {
     .contacts-page {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 0;
+      padding: 16px;
     }
 
     .page-header {

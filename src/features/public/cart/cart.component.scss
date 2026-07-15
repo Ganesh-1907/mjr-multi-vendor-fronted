@@ -224,6 +224,10 @@
 }
 
 @media (max-width: 600px) {
+  .cart-page {
+    padding: 16px;
+  }
+  
   .cart-item {
     display: flex;
     flex-wrap: wrap;

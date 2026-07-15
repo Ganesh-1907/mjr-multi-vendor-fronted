@@ -63,7 +63,7 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
     </div>
   `,
   styles: [`
-    .reports-page { max-width: 1200px; margin: 0 auto; }
+    .reports-page { max-width: 1200px; margin: 0 auto; padding: 16px; }
     .page-header { margin-bottom: 24px; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .stat { display: flex; align-items: center; gap: 16px; padding: 16px; }
