@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { ApiDataService, Order } from '../../../core/services/api-data.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-reports',
@@ -16,7 +17,7 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
       <div class="stats-grid">
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>payments</mat-icon><div>
-            <span class="stat-value">{{totalRevenue() | currency:'INR'}}</span>
+            <span class="stat-value">{{totalRevenue() | currency:env.currencyCode}}</span>
             <span class="stat-label">Total Revenue</span>
           </div></div>
         </mat-card-content></mat-card>
@@ -28,7 +29,7 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
         </mat-card-content></mat-card>
         <mat-card><mat-card-content>
           <div class="stat"><mat-icon>trending_up</mat-icon><div>
-            <span class="stat-value">{{avgOrderValue() | currency:'INR'}}</span>
+            <span class="stat-value">{{avgOrderValue() | currency:env.currencyCode}}</span>
             <span class="stat-label">Avg Order Value</span>
           </div></div>
         </mat-card-content></mat-card>
@@ -96,10 +97,8 @@ export class AdminReportsComponent implements OnInit {
   orderCount = computed(() => this.orders().length);
   avgOrderValue = computed(() => this.orders().length ? this.totalRevenue() / this.orders().length : 0);
   customerCount = signal(0);
-  monthlyData = signal([
-    { name: 'Jan', percentage: 45 }, { name: 'Feb', percentage: 60 }, { name: 'Mar', percentage: 55 },
-    { name: 'Apr', percentage: 70 }, { name: 'May', percentage: 80 }, { name: 'Jun', percentage: 90 }
-  ]);
+  monthlyData = signal<any[]>([]);
+  env = environment;
 
   ngOnInit(): void {
     this.apiDataService.getAdminDashboard().subscribe(data => {

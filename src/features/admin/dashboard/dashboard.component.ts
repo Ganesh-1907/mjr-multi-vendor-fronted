@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ApiDataService } from '../../../core/services/api-data.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -32,7 +33,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
         </mat-card-content></mat-card>
         <mat-card class="stat-card revenue"><mat-card-content>
           <mat-icon>payments</mat-icon>
-          <div class="stat-info"><span class="stat-value">INR {{totalRevenue() | number:'1.0-0'}}</span><span class="stat-label">Total Revenue</span></div>
+          <div class="stat-info"><span class="stat-value">{{totalRevenue() | currency:env.currencyCode}}</span><span class="stat-label">Total Revenue</span></div>
         </mat-card-content></mat-card>
         <mat-card class="stat-card"><mat-card-content>
           <mat-icon>receipt_long</mat-icon>
@@ -51,7 +52,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
                   <tr>
                     <td>{{order.orderNumber}}</td>
                     <td>{{order.customerName || order.customer?.firstName || 'N/A'}}</td>
-                    <td>{{order.total || order.totalAmount | currency:'INR'}}</td>
+                    <td>{{order.total || order.totalAmount | currency:env.currencyCode}}</td>
                     <td><span class="status-badge {{order.status}}">{{order.status}}</span></td>
                   </tr>
                 }
@@ -112,6 +113,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
 })
 export class AdminDashboardComponent implements OnInit {
   apiData = inject(ApiDataService);
+  env = environment;
 
   customers = signal(0);
   vendors = signal(0);

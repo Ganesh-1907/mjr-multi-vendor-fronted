@@ -8,6 +8,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { ApiService } from '../../../core/services/api.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-coupons',
@@ -31,12 +32,12 @@ import { ApiService } from '../../../core/services/api.service';
             <ng-container matColumnDef="type">
               <th mat-header-cell *matHeaderCellDef>Type</th>
               <td mat-cell *matCellDef="let coupon">
-                {{coupon.type === 'PERCENTAGE' ? coupon.value + '%' : 'INR ' + coupon.value}}
+                {{coupon.type === 'PERCENTAGE' ? coupon.value + '%' : (coupon.value | currency:env.currencyCode)}}
               </td>
             </ng-container>
             <ng-container matColumnDef="minOrder">
               <th mat-header-cell *matHeaderCellDef>Min Order</th>
-              <td mat-cell *matCellDef="let coupon">{{coupon.minOrderAmount | currency:'INR'}}</td>
+              <td mat-cell *matCellDef="let coupon">{{coupon.minOrderAmount | currency:env.currencyCode}}</td>
             </ng-container>
             <ng-container matColumnDef="usage">
               <th mat-header-cell *matHeaderCellDef>Usage</th>
@@ -103,7 +104,7 @@ import { ApiService } from '../../../core/services/api.service';
                     <label for="couponType">Coupon Type *</label>
                     <select id="couponType" name="type" class="form-control" [(ngModel)]="formType" required>
                       <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="FIXED">Fixed Amount (INR)</option>
+                      <option value="FIXED">Fixed Amount ({{env.currencyCode}})</option>
                     </select>
                   </div>
                 </div>
@@ -115,7 +116,7 @@ import { ApiService } from '../../../core/services/api.service';
                            [(ngModel)]="formValue" required min="0" placeholder="e.g. 10 or 200">
                   </div>
                   <div class="form-group half-width">
-                    <label for="minOrder">Min Order Amount (INR)</label>
+                    <label for="minOrder">Min Order Amount ({{env.currencyCode}})</label>
                     <input type="number" id="minOrder" name="minOrderAmount" class="form-control"
                            [(ngModel)]="formMinOrderAmount" min="0" placeholder="e.g. 500">
                   </div>
@@ -123,7 +124,7 @@ import { ApiService } from '../../../core/services/api.service';
 
                 <div class="form-row">
                   <div class="form-group half-width">
-                    <label for="maxDiscount">Max Discount (INR)</label>
+                    <label for="maxDiscount">Max Discount ({{env.currencyCode}})</label>
                     <input type="number" id="maxDiscount" name="maxDiscountAmount" class="form-control"
                            [(ngModel)]="formMaxDiscountAmount" min="0" placeholder="e.g. 1000">
                   </div>
@@ -221,6 +222,7 @@ import { ApiService } from '../../../core/services/api.service';
 })
 export class AdminCouponsComponent implements OnInit {
   apiService = inject(ApiService);
+  env = environment;
   coupons = signal<any[]>([]);
   displayedColumns = ['code', 'type', 'minOrder', 'usage', 'validity', 'status', 'actions'];
 

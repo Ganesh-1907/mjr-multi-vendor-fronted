@@ -13,6 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { ApiDataService, Order } from '../../../core/services/api-data.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-orders',
@@ -38,13 +39,9 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
             <mat-label>Status</mat-label>
             <mat-select [(ngModel)]="statusFilter" (selectionChange)="applyFilter()">
               <mat-option value="">All Statuses</mat-option>
-              <mat-option value="pending">Pending</mat-option>
-              <mat-option value="confirmed">Confirmed</mat-option>
-              <mat-option value="processing">Processing</mat-option>
-              <mat-option value="shipped">Shipped</mat-option>
-              <mat-option value="delivered">Delivered</mat-option>
-              <mat-option value="cancelled">Cancelled</mat-option>
-              <mat-option value="returned">Returned</mat-option>
+              @for (status of env.orderStatuses; track status) {
+                <mat-option [value]="status.toLowerCase()">{{status}}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
         </div>
@@ -79,7 +76,7 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
               <ng-container matColumnDef="total">
                 <th mat-header-cell *matHeaderCellDef>Total</th>
                 <td mat-cell *matCellDef="let order">
-                  {{order.totalAmount || order.total | currency:'INR'}}
+                  {{order.totalAmount || order.total | currency:env.currencyCode}}
                 </td>
               </ng-container>
 
@@ -162,13 +159,13 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
               <h3>Order Items ({{order.items.length || 0}})</h3>
               <div class="items-list">
                 <div class="item-row" *ngFor="let item of order.items">
-                  <img [src]="item.productImageUrl || 'assets/placeholder-product.png'" class="item-img" alt="product">
+                  <img [src]="item.productImageUrl || env.placeholderImage" class="item-img" alt="product">
                   <div class="item-details">
                     <span class="item-name">{{item.productName}}</span>
                     <span class="item-variant" *ngIf="item.variantName">{{item.variantName}}</span>
-                    <span class="item-price">{{item.price | currency:'INR'}} x {{item.quantity}}</span>
+                    <span class="item-price">{{item.price | currency:env.currencyCode}} x {{item.quantity}}</span>
                   </div>
-                  <span class="item-subtotal">{{item.subtotal | currency:'INR'}}</span>
+                  <span class="item-subtotal">{{item.subtotal | currency:env.currencyCode}}</span>
                 </div>
               </div>
             </div>
@@ -179,23 +176,23 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
               <div class="summary-box">
                 <div class="summary-row">
                   <span>Subtotal</span>
-                  <span>{{order.subtotal | currency:'INR'}}</span>
+                  <span>{{order.subtotal | currency:env.currencyCode}}</span>
                 </div>
                 <div class="summary-row" *ngIf="order.discountAmount > 0">
                   <span>Discount <span class="coupon-tag" *ngIf="order.couponCode">({{order.couponCode}})</span></span>
-                  <span class="discount-val">-{{order.discountAmount | currency:'INR'}}</span>
+                  <span class="discount-val">-{{order.discountAmount | currency:env.currencyCode}}</span>
                 </div>
                 <div class="summary-row">
                   <span>Shipping Cost</span>
-                  <span>{{order.shippingCost | currency:'INR'}}</span>
+                  <span>{{order.shippingCost | currency:env.currencyCode}}</span>
                 </div>
                 <div class="summary-row">
                   <span>Tax</span>
-                  <span>{{order.taxAmount | currency:'INR'}}</span>
+                  <span>{{order.taxAmount | currency:env.currencyCode}}</span>
                 </div>
                 <div class="summary-row total-row">
                   <span>Total Amount</span>
-                  <span>{{order.totalAmount | currency:'INR'}}</span>
+                  <span>{{order.totalAmount | currency:env.currencyCode}}</span>
                 </div>
                 <div class="payment-meta">
                   <div>
@@ -218,13 +215,9 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
                   <mat-form-field appearance="outline" class="form-field-half">
                     <mat-label>Order Status</mat-label>
                     <mat-select [(ngModel)]="newStatus" name="newStatus" required>
-                      <mat-option value="pending">Pending</mat-option>
-                      <mat-option value="confirmed">Confirmed</mat-option>
-                      <mat-option value="processing">Processing</mat-option>
-                      <mat-option value="shipped">Shipped</mat-option>
-                      <mat-option value="delivered">Delivered</mat-option>
-                      <mat-option value="cancelled">Cancelled</mat-option>
-                      <mat-option value="returned">Returned</mat-option>
+                      @for (status of env.orderStatuses; track status) {
+                        <mat-option [value]="status.toLowerCase()">{{status}}</mat-option>
+                      }
                     </mat-select>
                   </mat-form-field>
 
@@ -281,13 +274,9 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
           <div class="form-group">
             <label>New Status</label>
             <select class="custom-select" [(ngModel)]="modalStatus">
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="RETURNED">Returned</option>
+              @for (status of env.orderStatuses; track status) {
+                <option [value]="status">{{status}}</option>
+              }
             </select>
           </div>
 
@@ -497,6 +486,7 @@ import { ApiDataService, Order } from '../../../core/services/api-data.service';
 export class AdminOrdersComponent implements OnInit {
   apiData = inject(ApiDataService);
   snackBar = inject(MatSnackBar);
+  env = environment;
 
   orders = signal<Order[]>([]);
   filteredOrders = signal<Order[]>([]);

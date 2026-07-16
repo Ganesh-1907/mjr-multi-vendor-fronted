@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiDataService, Product, Vendor, Category } from '../../../core/services/api-data.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-products',
@@ -47,10 +48,9 @@ import { ApiDataService, Product, Vendor, Category } from '../../../core/service
             <mat-label>Status</mat-label>
             <mat-select [(ngModel)]="filterStatus">
               <mat-option value="">All Statuses</mat-option>
-              <mat-option value="APPROVED">Approved</mat-option>
-              <mat-option value="PENDING">Pending</mat-option>
-              <mat-option value="REJECTED">Rejected</mat-option>
-              <mat-option value="DRAFT">Draft</mat-option>
+              @for (status of env.productStatuses; track status) {
+                <mat-option [value]="status">{{status}}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
 
@@ -67,9 +67,9 @@ import { ApiDataService, Product, Vendor, Category } from '../../../core/service
             <ng-container matColumnDef="image">
               <th mat-header-cell *matHeaderCellDef>Image</th>
               <td mat-cell *matCellDef="let product">
-                <img [src]="product.images?.[0]?.url || 'assets/images/placeholder.png'" 
+                <img [src]="product.images?.[0]?.url || env.placeholderImage" 
                      [alt]="product.name" 
-                     (error)="$any($event.target).src='https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=150'">
+                     (error)="$any($event.target).src=env.placeholderImage">
               </td>
             </ng-container>
             <ng-container matColumnDef="name">
@@ -86,7 +86,7 @@ import { ApiDataService, Product, Vendor, Category } from '../../../core/service
             </ng-container>
             <ng-container matColumnDef="price">
               <th mat-header-cell *matHeaderCellDef>Price</th>
-              <td mat-cell *matCellDef="let product">{{(product.variants?.[0]?.price ?? 0) | currency:'INR'}}</td>
+              <td mat-cell *matCellDef="let product">{{(product.variants?.[0]?.price ?? 0) | currency:env.currencyCode}}</td>
             </ng-container>
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef>Status</th>
@@ -157,6 +157,7 @@ import { ApiDataService, Product, Vendor, Category } from '../../../core/service
 export class AdminProductsComponent implements OnInit {
   apiDataService = inject(ApiDataService);
   snackBar = inject(MatSnackBar);
+  env = environment;
 
   products = signal<Product[]>([]);
   filteredProducts = signal<Product[]>([]);
