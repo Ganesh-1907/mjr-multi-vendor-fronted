@@ -11,6 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../../core/services/cart.service';
 import { ApiDataService } from '../../../core/services/api-data.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-cart',
@@ -24,6 +25,7 @@ export class CartComponent implements OnInit {
   apiData = inject(ApiDataService);
   router = inject(Router);
   snackBar = inject(MatSnackBar);
+  env = environment;
 
   ngOnInit(): void {
     this.cart.loadCart();

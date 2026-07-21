@@ -1,6 +1,6 @@
 <mat-card class="product-card" [routerLink]="['/products', product.slug]">
   <div class="product-image-container">
-    <img [src]="primaryImage" [alt]="product.name" class="product-image" (error)="$any($event.target).src='https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=300'">
+    <img [src]="primaryImage" [alt]="product.name" class="product-image" loading="lazy" decoding="async" (error)="$any($event.target).src='https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=300'">
     @if (discount > 0) {
       <span class="discount-badge">{{discount}}% OFF</span>
     }
@@ -8,26 +8,26 @@
       <span class="trending-badge">Trending</span>
     }
     <div class="product-actions">
-      <button mat-mini-fab color="primary" (click)="addToCart($event)" matTooltip="Add to Cart">
-        <mat-icon>add_shopping_cart</mat-icon>
+      <button mat-mini-fab color="primary" (click)="addToCart($event)" matTooltip="Add to Cart" aria-label="Add to cart">
+        <mat-icon aria-hidden="true">add_shopping_cart</mat-icon>
       </button>
-      <button mat-mini-fab [color]="isInWishlist() ? 'warn' : 'basic'" (click)="toggleWishlist($event)" [matTooltip]="isInWishlist() ? 'Remove from Wishlist' : 'Add to Wishlist'">
-        <mat-icon>{{isInWishlist() ? 'favorite' : 'favorite_border'}}</mat-icon>
+      <button mat-mini-fab [color]="isInWishlist() ? 'warn' : 'basic'" (click)="toggleWishlist($event)" [matTooltip]="isInWishlist() ? 'Remove from Wishlist' : 'Add to Wishlist'" [attr.aria-label]="isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'">
+        <mat-icon aria-hidden="true">{{isInWishlist() ? 'favorite' : 'favorite_border'}}</mat-icon>
       </button>
     </div>
   </div>
   <mat-card-content>
     <p class="product-name">{{product.name}}</p>
     <div class="price-row">
-      <span class="current-price">INR {{product.primaryVariantPrice | number:'1.0-0'}}</span>
+      <span class="current-price">{{product.primaryVariantPrice | currency:env.currencyCode}}</span>
       @if (product.primaryVariantComparePrice) {
-        <span class="original-price">INR {{product.primaryVariantComparePrice | number:'1.0-0'}}</span>
+        <span class="original-price">{{product.primaryVariantComparePrice | currency:env.currencyCode}}</span>
       }
     </div>
     <div class="rating-row">
       <span class="rating">
-        <mat-icon class="star-icon">star</mat-icon>
-        {{product.rating | number:'1.1-1'}}
+        <mat-icon class="star-icon" aria-hidden="true">star</mat-icon>
+        <span aria-label="Rating">{{product.rating | number:'1.1-1'}}</span>
       </span>
       <span class="reviews">({{product.totalReviews}} reviews)</span>
     </div>

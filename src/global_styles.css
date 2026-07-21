@@ -140,6 +140,16 @@ img {
    Angular Material Global Theme Overrides
    ========================================== */
 
+/* ACCESSIBILITY: Global Focus Indicators */
+:focus-visible {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px !important;
+  border-radius: 2px;
+}
+.mat-mdc-button:focus-visible, a:focus-visible {
+  border-radius: inherit;
+}
+
 /* Cards */
 .mat-mdc-card {
   background-color: var(--bg-secondary) !important;
@@ -149,6 +159,7 @@ img {
   border: 1px solid var(--border-light) !important;
   overflow: hidden;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .mat-mdc-card:hover {
@@ -259,6 +270,7 @@ img {
   border: 1px solid var(--border-color) !important;
   border-radius: var(--radius-md) !important;
   overflow: hidden;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .mat-mdc-header-row {
@@ -350,12 +362,30 @@ img {
 
 /* Micro-animations */
 .fade-in {
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* Dashboard Full Width Layout Overrides */

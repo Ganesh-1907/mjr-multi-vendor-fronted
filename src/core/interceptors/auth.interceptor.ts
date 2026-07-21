@@ -1,11 +1,11 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
   const token = localStorage.getItem('auth_token');
-  const router = inject(Router);
+  const authService = inject(AuthService);
 
   let authReq = req;
   if (token) {
@@ -17,9 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('currentUser');
-        router.navigate(['/login']);
+        authService.logout();
       }
       return throwError(() => error);
     })

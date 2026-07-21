@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,14 +9,18 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule, MatSortHeader } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiDataService, Category, Product } from '../../../core/services/api-data.service';
 import { UploadService } from '../../../core/services/upload.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-vendor-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatChipsModule, MatMenuModule, MatProgressSpinnerModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatCardModule, MatTableModule, MatChipsModule, MatMenuModule, MatProgressSpinnerModule, MatPaginatorModule, MatSortModule],
   template: `
     <div class="products-page fade-in">
       <div class="page-header">
@@ -28,35 +32,35 @@ import { UploadService } from '../../../core/services/upload.service';
 
       <mat-card>
         <mat-card-content>
-          <table mat-table [dataSource]="products()" class="products-table">
+          <table mat-table [dataSource]="dataSource" matSort [trackBy]="trackByProductId" class="products-table">
             <ng-container matColumnDef="image">
               <th mat-header-cell *matHeaderCellDef>Image</th>
               <td mat-cell *matCellDef="let product">
-                <img [src]="product.images?.[0]?.url || 'assets/images/placeholder.png'" 
+                <img [src]="product.images?.[0]?.url || env.placeholderImage" 
                      [alt]="product.name"
-                     (error)="$any($event.target).src='https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=150'">
+                     (error)="$any($event.target).src=env.placeholderImage">
               </td>
             </ng-container>
             <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
               <td mat-cell *matCellDef="let product">{{product.name}}</td>
             </ng-container>
             <ng-container matColumnDef="category">
-              <th mat-header-cell *matHeaderCellDef>Category</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Category</th>
               <td mat-cell *matCellDef="let product">{{product.categoryName || getCategoryName(product.categoryId)}}</td>
             </ng-container>
             <ng-container matColumnDef="price">
-              <th mat-header-cell *matHeaderCellDef>Price</th>
-              <td mat-cell *matCellDef="let product">{{(product.variants?.[0]?.price ?? 0) | currency:'INR'}}</td>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Price</th>
+              <td mat-cell *matCellDef="let product">{{(product.variants?.[0]?.price ?? 0) | currency:env.currencyCode}}</td>
             </ng-container>
             <ng-container matColumnDef="stock">
-              <th mat-header-cell *matHeaderCellDef>Stock</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Stock</th>
               <td mat-cell *matCellDef="let product">
                 {{product.variants?.[0]?.stockQuantity ?? product.variants?.[0]?.stock ?? 0}}
               </td>
             </ng-container>
             <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Visibility</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Visibility</th>
               <td mat-cell *matCellDef="let product">
                 <mat-chip [color]="getStatusColor(product.status)">
                   {{getVisibilityLabel(product.status)}}
@@ -92,9 +96,16 @@ import { UploadService } from '../../../core/services/upload.service';
                 </mat-menu>
               </td>
             </ng-container>
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            
+            <tr class="mat-row empty-state-row" *matNoDataRow>
+              <td class="mat-cell" [attr.colspan]="displayedColumns.length" style="text-align: center; padding: 24px;">
+                No products found. Click "Add Product" to create one.
+              </td>
+            </tr>
           </table>
+          <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" aria-label="Select page of products"></mat-paginator>
         </mat-card-content>
       </mat-card>
 
@@ -125,7 +136,7 @@ import { UploadService } from '../../../core/services/upload.service';
 
                 <div class="form-grid">
                   <div class="form-group">
-                    <label for="prodPrice">Price (INR) *</label>
+                    <label for="prodPrice">Price ({{env.currencyCode}}) *</label>
                     <input type="number" id="prodPrice" name="price" class="form-control"
                            [(ngModel)]="formPrice" required min="1" placeholder="e.g. 79999">
                   </div>
@@ -186,8 +197,10 @@ import { UploadService } from '../../../core/services/upload.service';
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" mat-button (click)="closeModal()">Cancel</button>
-                <button type="submit" mat-raised-button color="primary">{{ isEditMode() ? 'Update' : 'Create' }}</button>
+                <button type="button" mat-button (click)="closeModal()" [disabled]="isSaving()">Cancel</button>
+                <button type="submit" mat-raised-button color="primary" [disabled]="isSaving()">
+                  {{ isSaving() ? 'Saving...' : (isEditMode() ? 'Update' : 'Create') }}
+                </button>
               </div>
             </form>
           </div>
@@ -199,7 +212,9 @@ import { UploadService } from '../../../core/services/upload.service';
     .products-page { max-width: 1200px; margin: 0 auto; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .page-header h1 { font-size: 28px; margin: 0; color: var(--text-primary); }
+    mat-card-content { overflow-x: auto; max-height: 700px; padding: 0 !important; }
     .products-table { width: 100%; background: transparent; }
+    th { background: var(--bg-secondary) !important; font-weight: 600; color: var(--text-secondary); }
     th, td { padding: 12px; }
     .products-table img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); }
     mat-chip { font-size: 12px; min-height: 24px; text-transform: capitalize; }
@@ -329,20 +344,26 @@ import { UploadService } from '../../../core/services/upload.service';
     }
   `]
 })
-export class VendorProductsComponent implements OnInit {
+export class VendorProductsComponent implements OnInit, AfterViewInit {
   auth = inject(AuthService);
   apiData = inject(ApiDataService);
   snackBar = inject(MatSnackBar);
   uploadService = inject(UploadService);
+  env = environment;
 
   products = signal<any[]>([]);
   categories = signal<Category[]>([]);
   displayedColumns = ['image', 'name', 'category', 'price', 'stock', 'status', 'actions'];
   uploading = signal(false);
 
+  dataSource = new MatTableDataSource<any>([]);
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+
   // Modal Control
   showModal = signal(false);
   isEditMode = signal(false);
+  isSaving = signal(false);
   editingProductId = signal<number | null>(null);
 
   // Form Fields
@@ -367,14 +388,46 @@ export class VendorProductsComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
+    this.dataSource.sortingDataAccessor = (item, property) => {
+      switch(property) {
+        case 'category': return item.categoryName || this.getCategoryName(item.categoryId);
+        case 'price': return item.variants?.[0]?.price ?? 0;
+        case 'stock': return item.variants?.[0]?.stockQuantity ?? item.variants?.[0]?.stock ?? 0;
+        default: return item[property];
+      }
+    };
+  }
+
+  trackByProductId(index: number, product: any): any {
+    return product.id;
+  }
+
   loadProducts(): void {
-    this.apiData.getVendorProducts().subscribe(data => this.products.set(data));
+    this.apiData.getVendorProducts().subscribe(data => {
+      this.products.set(data);
+      this.dataSource.data = data;
+    });
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.snackBar.open('Please select a valid image file', 'Close', { duration: 3000 });
+      input.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.snackBar.open('Image size must be less than 5MB', 'Close', { duration: 3000 });
+      input.value = '';
+      return;
+    }
 
     this.uploading.set(true);
     this.uploadService.uploadFile(file).subscribe({
@@ -498,6 +551,8 @@ export class VendorProductsComponent implements OnInit {
       this.snackBar.open('Please fill all required fields correctly', 'Close', { duration: 3000 });
       return;
     }
+    
+    this.isSaving.set(true);
 
     const slug = this.formName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -538,10 +593,12 @@ export class VendorProductsComponent implements OnInit {
             ? 'Product updated successfully, pending approval!'
             : 'Product updated successfully (private)!';
           this.snackBar.open(msg, 'Close', { duration: 3000 });
+          this.isSaving.set(false);
           this.closeModal();
           this.loadProducts();
         },
         error: (err) => {
+          this.isSaving.set(false);
           this.snackBar.open(err.error?.message || 'Failed to update product', 'Close', { duration: 3000 });
         }
       });
@@ -552,10 +609,12 @@ export class VendorProductsComponent implements OnInit {
             ? 'Product created successfully, pending approval!'
             : 'Product created successfully (private)!';
           this.snackBar.open(msg, 'Close', { duration: 3000 });
+          this.isSaving.set(false);
           this.closeModal();
           this.loadProducts();
         },
         error: (err) => {
+          this.isSaving.set(false);
           this.snackBar.open(err.error?.message || 'Failed to create product', 'Close', { duration: 3000 });
         }
       });

@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,13 +11,15 @@ import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
   imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule, MatTooltipModule, MatCardModule],
   templateUrl: './product-card.component.html',
-  styleUrl: './product-card.component.scss'
+  styleUrl: './product-card.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductCardComponent {
   @Input() product!: ProductPreview;
@@ -28,6 +30,7 @@ export class ProductCardComponent {
   auth = inject(AuthService);
   router = inject(Router);
   snackBar = inject(MatSnackBar);
+  env = environment;
 
   get primaryImage(): string {
     return this.product.primaryImageUrl || 'assets/placeholder.png';

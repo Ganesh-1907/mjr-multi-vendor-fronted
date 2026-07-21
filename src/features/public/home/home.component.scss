@@ -1398,3 +1398,67 @@
     }
   }
 }
+
+/* RESPONSIVE LAYOUT FIXES */
+@media (max-width: 1024px) {
+  .hero-section, .offers-section, .categories-section, .featured-section, .trending-section, .about-contact-section, .trust-features-section, .become-vendor-section {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .banner-carousel {
+    height: 480px;
+  }
+  .banner-content h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 768px) {
+  .steps-container {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .banner-carousel {
+    height: 380px;
+  }
+
+  .banner-content {
+    left: 24px;
+    right: 24px;
+    
+    h1 {
+      font-size: 28px;
+    }
+  }
+
+  .banner-nav {
+    display: none !important;
+  }
+
+  .about-contact-section .grid-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .info-block {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .block-img {
+    max-height: 200px;
+  }
+  
+  .trust-features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner-carousel {
+    height: 300px;
+  }
+  .banner-content h1 {
+    font-size: 22px;
+  }
+}

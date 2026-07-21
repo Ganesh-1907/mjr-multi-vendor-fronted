@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, shareReplay } from 'rxjs';
 import { ApiService } from './api.service';
+import { environment } from '../../environments/environment';
 
 export interface ProductImage {
   id: number;
@@ -185,8 +186,15 @@ export class ApiDataService {
     return this.api.get<Category[]>('/admin/categories');
   }
 
+  private categoriesCache$?: Observable<Category[]>;
+
   getCategories(): Observable<Category[]> {
-    return this.api.get<Category[]>('/categories');
+    if (!this.categoriesCache$) {
+      this.categoriesCache$ = this.api.get<Category[]>('/categories').pipe(
+        shareReplay(1)
+      );
+    }
+    return this.categoriesCache$;
   }
 
   getCategoryBySlug(slug: string): Observable<Category> {
@@ -246,16 +254,30 @@ export class ApiDataService {
     return this.api.get<Vendor>(`/vendors/${slug}`);
   }
 
+  private bannersCache$?: Observable<Banner[]>;
+
   getBanners(): Observable<Banner[]> {
-    return this.api.get<Banner[]>('/banners');
+    if (!this.bannersCache$) {
+      this.bannersCache$ = this.api.get<Banner[]>('/banners').pipe(
+        shareReplay(1)
+      );
+    }
+    return this.bannersCache$;
   }
 
   validateCoupon(code: string, amount: number): Observable<{ coupon: Coupon; discountAmount: number; finalAmount: number }> {
     return this.api.get<{ coupon: Coupon; discountAmount: number; finalAmount: number }>('/public/coupons/validate', { code, amount: amount.toString() });
   }
 
+  private activeCouponsCache$?: Observable<Coupon[]>;
+
   getActiveCoupons(): Observable<Coupon[]> {
-    return this.api.get<Coupon[]>('/public/coupons');
+    if (!this.activeCouponsCache$) {
+      this.activeCouponsCache$ = this.api.get<Coupon[]>('/public/coupons').pipe(
+        shareReplay(1)
+      );
+    }
+    return this.activeCouponsCache$;
   }
 
   getOrders(): Observable<Order[]> {
@@ -275,7 +297,7 @@ export class ApiDataService {
   }
 
   createRazorpayOrder(amount: number): Observable<any> {
-    return this.api.post<any>('/payment/create-order', { amount, currency: 'INR' });
+    return this.api.post<any>('/payment/create-order', { amount, currency: environment.currencyCode });
   }
 
   verifyRazorpayPayment(data: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string }): Observable<any> {
@@ -369,14 +391,17 @@ export class ApiDataService {
   }
 
   createCategory(categoryData: any): Observable<Category> {
+    this.categoriesCache$ = undefined; // Invalidate cache
     return this.api.post<Category>('/admin/categories', categoryData);
   }
 
   updateCategory(id: number, categoryData: any): Observable<Category> {
+    this.categoriesCache$ = undefined; // Invalidate cache
     return this.api.put<Category>(`/admin/categories/${id}`, categoryData);
   }
 
   deleteCategory(id: number): Observable<void> {
+    this.categoriesCache$ = undefined; // Invalidate cache
     return this.api.delete<void>(`/admin/categories/${id}`);
   }
 

@@ -13,6 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CartService } from '../../../core/services/cart.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiDataService } from '../../../core/services/api-data.service';
+import { environment } from '../../../environments/environment';
 
 declare var Razorpay: any;
 
@@ -188,7 +189,7 @@ export class CheckoutComponent implements OnInit {
     const options = {
       key: orderData.keyId,
       amount: orderData.amount,
-      currency: orderData.currency || 'INR',
+      currency: orderData.currency || environment.currencyCode,
       name: 'N-CommerceHub',
       description: 'Order Payment',
       order_id: orderData.id,

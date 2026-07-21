@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -151,8 +152,10 @@ import { environment } from '../../../environments/environment';
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" mat-button (click)="closeModal()">Cancel</button>
-                <button type="submit" mat-raised-button color="primary">{{ isEditMode() ? 'Update' : 'Create' }}</button>
+                <button type="button" mat-button (click)="closeModal()" [disabled]="isSaving()">Cancel</button>
+                <button type="submit" mat-raised-button color="primary" [disabled]="isSaving()">
+                  {{ isSaving() ? 'Saving...' : (isEditMode() ? 'Update' : 'Create') }}
+                </button>
               </div>
             </form>
           </div>
@@ -222,12 +225,14 @@ import { environment } from '../../../environments/environment';
 })
 export class AdminCouponsComponent implements OnInit {
   apiService = inject(ApiService);
+  snackBar = inject(MatSnackBar);
   env = environment;
   coupons = signal<any[]>([]);
   displayedColumns = ['code', 'type', 'minOrder', 'usage', 'validity', 'status', 'actions'];
 
   showModal = signal(false);
   isEditMode = signal(false);
+  isSaving = signal(false);
   selectedCouponId = signal<number | null>(null);
 
   formCode = signal('');
@@ -284,9 +289,21 @@ export class AdminCouponsComponent implements OnInit {
 
   saveCoupon(): void {
     if (!this.formCode() || !this.formType() || this.formValue() === null || this.formUsageLimit() === null || !this.formValidUntil()) {
-      alert('Please fill out all required fields');
+      this.snackBar.open('Please fill out all required fields', 'Close', { duration: 3000 });
       return;
     }
+    
+    if (this.formValue()! < 0 || this.formUsageLimit()! < 1) {
+      this.snackBar.open('Values must be positive numbers', 'Close', { duration: 3000 });
+      return;
+    }
+    
+    if (this.formType() === 'PERCENTAGE' && this.formValue()! > 100) {
+      this.snackBar.open('Percentage discount cannot exceed 100%', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.isSaving.set(true);
 
     const payload = {
       code: this.formCode(),
@@ -304,18 +321,28 @@ export class AdminCouponsComponent implements OnInit {
       const id = this.selectedCouponId();
       this.apiService.putRaw<any>(`/admin/coupons/${id}`, payload).subscribe({
         next: () => {
+          this.snackBar.open('Coupon updated successfully!', 'Close', { duration: 3000 });
+          this.isSaving.set(false);
           this.loadCoupons();
           this.closeModal();
         },
-        error: (err) => alert(err.error?.message || 'Failed to update coupon')
+        error: (err) => {
+          this.isSaving.set(false);
+          this.snackBar.open(err.error?.message || 'Failed to update coupon', 'Close', { duration: 3000 });
+        }
       });
     } else {
       this.apiService.postRaw<any>('/admin/coupons', payload).subscribe({
         next: () => {
+          this.snackBar.open('Coupon created successfully!', 'Close', { duration: 3000 });
+          this.isSaving.set(false);
           this.loadCoupons();
           this.closeModal();
         },
-        error: (err) => alert(err.error?.message || 'Failed to create coupon')
+        error: (err) => {
+          this.isSaving.set(false);
+          this.snackBar.open(err.error?.message || 'Failed to create coupon', 'Close', { duration: 3000 });
+        }
       });
     }
   }
@@ -323,8 +350,11 @@ export class AdminCouponsComponent implements OnInit {
   deleteCoupon(id: number): void {
     if (confirm('Are you sure you want to delete this coupon?')) {
       this.apiService.deleteRaw<any>(`/admin/coupons/${id}`).subscribe({
-        next: () => this.loadCoupons(),
-        error: (err) => alert(err.error?.message || 'Failed to delete coupon')
+        next: () => {
+          this.snackBar.open('Coupon deleted successfully', 'Close', { duration: 3000 });
+          this.loadCoupons();
+        },
+        error: (err) => this.snackBar.open(err.error?.message || 'Failed to delete coupon', 'Close', { duration: 3000 })
       });
     }
   }
@@ -343,8 +373,11 @@ export class AdminCouponsComponent implements OnInit {
     };
 
     this.apiService.putRaw<any>(`/admin/coupons/${coupon.id}`, payload).subscribe({
-      next: () => this.loadCoupons(),
-      error: (err) => alert(err.error?.message || 'Failed to update coupon status')
+      next: () => {
+        this.snackBar.open('Coupon status updated', 'Close', { duration: 2000 });
+        this.loadCoupons();
+      },
+      error: (err) => this.snackBar.open(err.error?.message || 'Failed to update coupon status', 'Close', { duration: 3000 })
     });
   }
 

@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiDataService } from '../../../core/services/api-data.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-vendor-orders',
@@ -52,7 +53,7 @@ import { ApiDataService } from '../../../core/services/api-data.service';
               </ng-container>
               <ng-container matColumnDef="total">
                 <th mat-header-cell *matHeaderCellDef>Total</th>
-                <td mat-cell *matCellDef="let order">{{order.total || order.totalAmount | currency:'INR'}}</td>
+                <td mat-cell *matCellDef="let order">{{order.total || order.totalAmount | currency:env.currencyCode}}</td>
               </ng-container>
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef>Status</th>
@@ -135,13 +136,13 @@ import { ApiDataService } from '../../../core/services/api-data.service';
                 <h3>Order Items ({{detail.items?.length || 0}})</h3>
                 <div class="items-list">
                   <div class="item-row" *ngFor="let item of detail.items">
-                    <img [src]="item.productImageUrl || 'assets/placeholder-product.png'" class="item-img" alt="product">
+                    <img [src]="item.productImageUrl || env.placeholderImage" class="item-img" alt="product">
                     <div class="item-details">
                       <span class="item-name">{{item.productName}}</span>
                       <span class="item-variant" *ngIf="item.variantName">{{item.variantName}}</span>
-                      <span class="item-qty">{{item.price | currency:'INR'}} x {{item.quantity}}</span>
+                      <span class="item-qty">{{item.price | currency:env.currencyCode}} x {{item.quantity}}</span>
                     </div>
-                    <span class="item-price">{{item.subtotal | currency:'INR'}}</span>
+                    <span class="item-price">{{item.subtotal | currency:env.currencyCode}}</span>
                   </div>
                 </div>
               </div>
@@ -152,19 +153,19 @@ import { ApiDataService } from '../../../core/services/api-data.service';
                 <div class="summary-table">
                   <div class="summary-row">
                     <span>Subtotal</span>
-                    <span>{{detail.subtotal | currency:'INR'}}</span>
+                    <span>{{detail.subtotal | currency:env.currencyCode}}</span>
                   </div>
                   <div class="summary-row" *ngIf="detail.discountAmount">
                     <span>Discount</span>
-                    <span class="discount-val">-{{detail.discountAmount | currency:'INR'}}</span>
+                    <span class="discount-val">-{{detail.discountAmount | currency:env.currencyCode}}</span>
                   </div>
                   <div class="summary-row">
                     <span>Shipping</span>
-                    <span>{{detail.shippingCost | currency:'INR'}}</span>
+                    <span>{{detail.shippingCost | currency:env.currencyCode}}</span>
                   </div>
                   <div class="summary-row total-row">
                     <span>Total Amount</span>
-                    <span>{{detail.totalAmount | currency:'INR'}}</span>
+                    <span>{{detail.totalAmount | currency:env.currencyCode}}</span>
                   </div>
                   <div class="payment-meta">
                     <div>
@@ -215,13 +216,9 @@ import { ApiDataService } from '../../../core/services/api-data.service';
           <div class="form-group">
             <label>New Status</label>
             <select class="custom-select" [(ngModel)]="modalStatus">
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="RETURNED">Returned</option>
+              @for (status of env.orderStatuses; track status) {
+                <option [value]="status">{{status}}</option>
+              }
             </select>
           </div>
 
@@ -415,6 +412,7 @@ export class VendorOrdersComponent implements OnInit {
   auth = inject(AuthService);
   apiData = inject(ApiDataService);
   snackBar = inject(MatSnackBar);
+  env = environment;
 
   orders = signal<any[]>([]);
   displayedColumns = ['orderId', 'customer', 'items', 'total', 'status', 'date', 'actions'];

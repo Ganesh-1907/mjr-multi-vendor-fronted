@@ -10,6 +10,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { ApiDataService } from '../../../core/services/api-data.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-customer-orders',
@@ -51,7 +52,7 @@ import { AuthService } from '../../../core/services/auth.service';
                     </mat-panel-title>
                     <mat-panel-description>
                       <span class="order-date">{{order.createdAt | date:'mediumDate'}}</span>
-                      <span class="order-total">{{order.totalAmount || order.total | currency:'INR'}}</span>
+                      <span class="order-total">{{order.totalAmount || order.total | currency:env.currencyCode}}</span>
                       <span class="status-badge {{order.status?.toLowerCase()}}">{{order.status}}</span>
                     </mat-panel-description>
                   </mat-expansion-panel-header>
@@ -62,12 +63,12 @@ import { AuthService } from '../../../core/services/auth.service';
                       <div class="order-items-grid">
                         @for (item of order.items; track item.id) {
                           <div class="order-item-row">
-                            <img [src]="item.productImageUrl || 'assets/placeholder-product.png'" class="item-img" alt="product">
+                            <img [src]="item.productImageUrl || env.placeholderImage" class="item-img" alt="product" (error)="$any($event.target).src=env.placeholderImage">
                             <div class="item-info">
                               <span class="item-name">{{item.productName}}</span>
-                              <span class="item-qty">{{item.price | currency:'INR'}} x {{item.quantity}}</span>
+                              <span class="item-qty">{{item.price | currency:env.currencyCode}} x {{item.quantity}}</span>
                             </div>
-                            <span class="item-subtotal">{{item.subtotal | currency:'INR'}}</span>
+                            <span class="item-subtotal">{{item.subtotal | currency:env.currencyCode}}</span>
                           </div>
                         }
                       </div>
@@ -195,6 +196,7 @@ import { AuthService } from '../../../core/services/auth.service';
   `]
 })
 export class CustomerOrdersComponent implements OnInit {
+  env = environment;
   apiData = inject(ApiDataService);
   snackBar = inject(MatSnackBar);
 

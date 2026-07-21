@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +12,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule, MatSortHeader } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 import { ApiDataService, Order } from '../../../core/services/api-data.service';
 import { environment } from '../../../environments/environment';
 
@@ -22,7 +25,7 @@ import { environment } from '../../../environments/environment';
     CommonModule, FormsModule,
     MatIconModule, MatButtonModule, MatCardModule, MatTableModule,
     MatChipsModule, MatInputModule, MatFormFieldModule, MatSelectModule, MatTooltipModule,
-    MatMenuModule
+    MatMenuModule, MatPaginatorModule, MatSortModule
   ],
   template: `
     <div class="orders-page" [class.has-selection]="selectedOrder()">
@@ -51,37 +54,37 @@ import { environment } from '../../../environments/environment';
         <!-- Orders List Panel -->
         <mat-card class="list-card">
           <mat-card-content class="table-container">
-            <table mat-table [dataSource]="filteredOrders()" class="orders-table">
+            <table mat-table [dataSource]="dataSource" matSort [trackBy]="trackByOrderId" class="orders-table">
               <ng-container matColumnDef="orderNumber">
-                <th mat-header-cell *matHeaderCellDef>Order Number</th>
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Order Number</th>
                 <td mat-cell *matCellDef="let order">
                   <span class="order-number">#{{order.orderNumber}}</span>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="customer">
-                <th mat-header-cell *matHeaderCellDef>Customer</th>
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Customer</th>
                 <td mat-cell *matCellDef="let order">
                   <span class="customer-name">{{order.shippingFullName || 'User #' + order.userId}}</span>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="date">
-                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="createdAt">Date</th>
                 <td mat-cell *matCellDef="let order">
                   {{order.createdAt | date:'shortDate'}}
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="total">
-                <th mat-header-cell *matHeaderCellDef>Total</th>
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="totalAmount">Total</th>
                 <td mat-cell *matCellDef="let order">
                   {{order.totalAmount || order.total | currency:env.currencyCode}}
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
                 <td mat-cell *matCellDef="let order">
                   <span class="status-badge {{order.status?.toLowerCase()}}">{{order.status}}</span>
                 </td>
@@ -106,15 +109,17 @@ import { environment } from '../../../environments/environment';
                 </td>
               </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
                   [class.selected-row]="(selectedOrder()?.id || selectedOrder()?._id) === (row.id || row._id)"
                   (click)="selectOrder(row)"></tr>
             </table>
 
-            <div *ngIf="filteredOrders().length === 0" class="no-records">
+            <div *ngIf="dataSource.filteredData.length === 0" class="no-records">
               No orders found matching the filters.
             </div>
+            
+            <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" aria-label="Select page of orders"></mat-paginator>
           </mat-card-content>
         </mat-card>
 
@@ -309,9 +314,9 @@ import { environment } from '../../../environments/environment';
     
     .content-container { display: flex; gap: 24px; align-items: flex-start; }
     .list-card { flex: 1; min-width: 0; }
-    .table-container { padding: 0 !important; overflow-x: auto; }
+    .table-container { padding: 0 !important; overflow-x: auto; max-height: 600px; }
     .orders-table { width: 100%; }
-    th { font-weight: 600; color: rgba(0,0,0,0.7); }
+    th { font-weight: 600; color: rgba(0,0,0,0.7); background: #f8f9fa !important; }
     td { vertical-align: middle; }
     
     .order-number { font-family: monospace; font-size: 13px; font-weight: 600; color: #1a237e; }
@@ -483,13 +488,16 @@ import { environment } from '../../../environments/environment';
     }
   `]
 })
-export class AdminOrdersComponent implements OnInit {
+export class AdminOrdersComponent implements OnInit, AfterViewInit {
   apiData = inject(ApiDataService);
   snackBar = inject(MatSnackBar);
   env = environment;
 
+  dataSource = new MatTableDataSource<Order>([]);
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+
   orders = signal<Order[]>([]);
-  filteredOrders = signal<Order[]>([]);
   selectedOrder = signal<Order | null>(null);
 
   searchQuery = '';
@@ -510,6 +518,21 @@ export class AdminOrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadOrders();
+  }
+
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
+    this.dataSource.filterPredicate = (data: Order, filter: string) => {
+      const q = filter.toLowerCase();
+      // Handle the strict status filter by appending it or checking exactly
+      // but simpler: we run status filter in a custom way before table filter
+      return true; // We'll manage filtering manually via applyFilter
+    };
+  }
+
+  trackByOrderId(index: number, order: Order): any {
+    return order.id || order._id;
   }
 
   loadOrders(): void {
@@ -552,7 +575,10 @@ export class AdminOrdersComponent implements OnInit {
       );
     }
 
-    this.filteredOrders.set(result);
+    this.dataSource.data = result;
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
   }
 
   selectOrder(order: Order): void {

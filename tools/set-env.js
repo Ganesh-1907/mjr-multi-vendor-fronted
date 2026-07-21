@@ -22,7 +22,11 @@ if (!fs.existsSync(envDir)) fs.mkdirSync(envDir, { recursive: true });
 
 const template = (production) => `export const environment = {
   production: ${production},
-  apiBaseUrl: '${BACKEND_URL}'
+  apiBaseUrl: '${BACKEND_URL}',
+  currencyCode: 'INR',
+  placeholderImage: 'assets/images/placeholder.svg',
+  orderStatuses: ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'],
+  productStatuses: ['DRAFT', 'PUBLISHED', 'OUT_OF_STOCK']
 };
 `;
 

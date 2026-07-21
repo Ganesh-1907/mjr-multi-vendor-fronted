@@ -16,7 +16,7 @@
               <h3 class="clickable hover-primary" [routerLink]="['/products', item.productSlug]">{{item.productName}}</h3>
               <p class="variant">{{item.variantName}}</p>
               <p class="vendor">Sold by: {{cart.getVendorById(item.vendorId!)}}</p>
-              <div class="item-price">INR {{item.price | number:'1.0-0'}}</div>
+              <div class="item-price">{{item.price | currency:env.currencyCode}}</div>
             </div>
             <div class="item-quantity">
               <button mat-icon-button (click)="updateQuantity(item.id, item.quantity - 1)" [disabled]="item.quantity <= 1">
@@ -28,7 +28,7 @@
               </button>
             </div>
             <div class="item-total">
-              INR {{item.subtotal | number:'1.0-0'}}
+              {{item.subtotal | currency:env.currencyCode}}
             </div>
             <button mat-icon-button class="remove-btn" (click)="removeItem(item.id)">
               <mat-icon>delete_outline</mat-icon>
@@ -49,7 +49,7 @@
           <mat-card-content>
             <div class="summary-row">
               <span>Subtotal ({{cart.itemCount()}} items)</span>
-              <span>INR {{cart.subtotal() | number:'1.0-0'}}</span>
+              <span>{{cart.subtotal() | currency:env.currencyCode}}</span>
             </div>
             <div class="summary-row">
               <span>Shipping</span>
@@ -57,20 +57,20 @@
                 @if (shippingCost() === 0) {
                   <span class="free">FREE</span>
                 } @else {
-                  <span>INR {{shippingCost()}}</span>
+                  <span>{{shippingCost() | currency:env.currencyCode}}</span>
                 }
               </span>
             </div>
             <div class="summary-row">
               <span>Tax (18%)</span>
-              <span>INR {{tax() | number:'1.0-0'}}</span>
+              <span>{{tax() | currency:env.currencyCode}}</span>
             </div>
 
             <mat-divider></mat-divider>
 
             <div class="summary-row total">
               <span>Total</span>
-              <span>INR {{total() | number:'1.0-0'}}</span>
+              <span>{{total() | currency:env.currencyCode}}</span>
             </div>
 
             <button mat-raised-button color="primary" class="checkout-btn" (click)="checkout()">

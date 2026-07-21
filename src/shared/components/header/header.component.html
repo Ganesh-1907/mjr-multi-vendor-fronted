@@ -62,35 +62,35 @@
         <!-- Desktop Search Bar -->
         <form class="search-form hide-mobile-search" (ngSubmit)="onSearch()">
           <mat-form-field class="search-input" appearance="outline" subscriptSizing="dynamic">
-            <input matInput type="text" placeholder="Search products, brands..." [(ngModel)]="searchQuery" name="search">
-            <button mat-icon-button matSuffix type="submit">
-              <mat-icon>search</mat-icon>
+            <input matInput type="text" placeholder="Search products, brands..." [(ngModel)]="searchQuery" name="search" aria-label="Search query">
+            <button mat-icon-button matSuffix type="submit" aria-label="Submit search">
+              <mat-icon aria-hidden="true">search</mat-icon>
             </button>
           </mat-form-field>
         </form>
 
         <nav class="nav-links">
           <!-- Direct Theme Toggle (Visible to all users) -->
-          <button mat-icon-button (click)="theme.toggleTheme()" class="theme-toggle-btn" [title]="theme.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-            <mat-icon class="theme-icon">{{theme.isDarkMode() ? 'light_mode' : 'dark_mode'}}</mat-icon>
+          <button mat-icon-button (click)="theme.toggleTheme()" class="theme-toggle-btn" [title]="theme.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'" aria-label="Toggle dark mode">
+            <mat-icon class="theme-icon" aria-hidden="true">{{theme.isDarkMode() ? 'light_mode' : 'dark_mode'}}</mat-icon>
           </button>
 
 
           @if (auth.isCustomer()) {
-            <a mat-button routerLink="/wishlist" class="nav-link" [matBadge]="wishlist.itemCount()" [matBadgeHidden]="wishlist.itemCount() === 0" matBadgeColor="warn">
-              <mat-icon>favorite_border</mat-icon>
+            <a mat-button routerLink="/wishlist" class="nav-link" [matBadge]="wishlist.itemCount()" [matBadgeHidden]="wishlist.itemCount() === 0" matBadgeColor="warn" aria-label="View Wishlist">
+              <mat-icon aria-hidden="true">favorite_border</mat-icon>
               <span class="hide-mobile">Wishlist</span>
             </a>
 
-            <a mat-button routerLink="/cart" class="nav-link" [matBadge]="cart.itemCount()" [matBadgeHidden]="cart.itemCount() === 0" matBadgeColor="warn">
-              <mat-icon>shopping_cart</mat-icon>
+            <a mat-button routerLink="/cart" class="nav-link" [matBadge]="cart.itemCount()" [matBadgeHidden]="cart.itemCount() === 0" matBadgeColor="warn" aria-label="View Shopping Cart">
+              <mat-icon aria-hidden="true">shopping_cart</mat-icon>
               <span class="hide-mobile">Cart</span>
             </a>
           }
 
           @if (auth.isAuthenticated()) {
-            <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-btn hide-mobile">
-              <mat-icon>account_circle</mat-icon>
+            <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-btn hide-mobile" aria-label="User Account Menu">
+              <mat-icon aria-hidden="true">account_circle</mat-icon>
               <span class="hide-mobile">{{auth.currentUser()?.firstName}}</span>
             </button>
             <mat-menu #userMenu="matMenu">

@@ -1,4 +1,6 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,7 +21,8 @@ import { ProductCardComponent } from '../../../shared/components/product-card/pr
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, MatIconModule, MatButtonModule, MatChipsModule, MatSelectModule, MatInputModule, MatFormFieldModule, MatExpansionModule, MatDividerModule, MatPaginatorModule, ProductCardComponent],
   templateUrl: './products.component.html',
-  styleUrl: './products.component.scss'
+  styleUrl: './products.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductsComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -41,6 +44,9 @@ export class ProductsComponent implements OnInit {
 
   isMobileFiltersOpen = signal(false);
 
+  private searchSubject = new Subject<string>();
+  private priceSubject = new Subject<[number, number]>();
+
   constructor() {}
 
   ngOnInit(): void {
@@ -50,6 +56,23 @@ export class ProductsComponent implements OnInit {
       this.searchQuery.set(params['search'] || '');
       this.isFeaturedFilter.set(params['featured'] === 'true');
       this.isTrendingFilter.set(params['trending'] === 'true');
+      this.currentPage.set(0);
+      this.loadProducts();
+    });
+
+    this.searchSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe(value => {
+      this.searchQuery.set(value);
+      this.currentPage.set(0);
+      this.loadProducts();
+    });
+
+    this.priceSubject.pipe(
+      debounceTime(500)
+    ).subscribe(range => {
+      this.priceRange.set(range);
       this.currentPage.set(0);
       this.loadProducts();
     });
@@ -127,9 +150,7 @@ export class ProductsComponent implements OnInit {
   }
 
   updateSearch(value: string): void {
-    this.searchQuery.set(value);
-    this.currentPage.set(0);
-    this.loadProducts();
+    this.searchSubject.next(value);
   }
 
   selectCategory(catSlug: string | null): void {
@@ -145,9 +166,7 @@ export class ProductsComponent implements OnInit {
   }
 
   onPriceRangeChange(range: [number, number]): void {
-    this.priceRange.set(range);
-    this.currentPage.set(0);
-    this.loadProducts();
+    this.priceSubject.next(range);
   }
 
   onPageChange(event: PageEvent): void {
@@ -182,5 +201,7 @@ export class ProductsComponent implements OnInit {
 
   ngOnDestroy(): void {
     document.body.classList.remove('body-no-scroll');
+    this.searchSubject.complete();
+    this.priceSubject.complete();
   }
 }

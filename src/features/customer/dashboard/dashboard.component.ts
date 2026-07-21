@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ApiDataService } from '../../../core/services/api-data.service';
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-customer-dashboard',
@@ -89,7 +90,7 @@ import { WishlistService } from '../../../core/services/wishlist.service';
                     <td><a [routerLink]="['/customer/orders', order.id]">{{order.orderNumber}}</a></td>
                     <td>{{order.createdAt | date:'shortDate'}}</td>
                     <td><span class="status-badge {{order.status}}">{{order.status}}</span></td>
-                    <td>{{order.total || order.totalAmount | currency:'INR'}}</td>
+                    <td>{{order.total || order.totalAmount | currency:env.currencyCode}}</td>
                   </tr>
                 }
               </tbody>
@@ -142,6 +143,7 @@ import { WishlistService } from '../../../core/services/wishlist.service';
   `]
 })
 export class CustomerDashboardComponent implements OnInit {
+  env = environment;
   auth = inject(AuthService);
   apiData = inject(ApiDataService);
   cart = inject(CartService);

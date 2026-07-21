@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, timeout, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface ApiResponse<T> {
@@ -43,41 +43,67 @@ export class ApiService {
       });
     }
     return this.http.get<ApiResponse<T>>(`${this.baseUrl}${path}`, { params: httpParams })
-      .pipe(map(res => this.mapIds(res.data)));
+      .pipe(
+        timeout(15000),
+        retry(1),
+        map(res => this.mapIds(res.data))
+      );
   }
 
   post<T>(path: string, body: any): Observable<T> {
     return this.http.post<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map(res => this.mapIds(res.data)));
+      .pipe(
+        timeout(15000),
+        map(res => this.mapIds(res.data))
+      );
   }
 
   put<T>(path: string, body: any): Observable<T> {
     return this.http.put<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map(res => this.mapIds(res.data)));
+      .pipe(
+        timeout(15000),
+        map(res => this.mapIds(res.data))
+      );
   }
 
   delete<T>(path: string): Observable<T> {
     return this.http.delete<ApiResponse<T>>(`${this.baseUrl}${path}`)
-      .pipe(map(res => this.mapIds(res.data)));
+      .pipe(
+        timeout(15000),
+        map(res => this.mapIds(res.data))
+      );
   }
 
   getRaw<T>(path: string): Observable<ApiResponse<T>> {
     return this.http.get<ApiResponse<T>>(`${this.baseUrl}${path}`)
-      .pipe(map(res => this.mapIds(res)));
+      .pipe(
+        timeout(15000),
+        retry(1),
+        map(res => this.mapIds(res))
+      );
   }
 
   postRaw<T>(path: string, body: any): Observable<ApiResponse<T>> {
     return this.http.post<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map(res => this.mapIds(res)));
+      .pipe(
+        timeout(15000),
+        map(res => this.mapIds(res))
+      );
   }
 
   putRaw<T>(path: string, body: any): Observable<ApiResponse<T>> {
     return this.http.put<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map(res => this.mapIds(res)));
+      .pipe(
+        timeout(15000),
+        map(res => this.mapIds(res))
+      );
   }
 
   deleteRaw<T>(path: string): Observable<ApiResponse<T>> {
     return this.http.delete<ApiResponse<T>>(`${this.baseUrl}${path}`)
-      .pipe(map(res => this.mapIds(res)));
+      .pipe(
+        timeout(15000),
+        map(res => this.mapIds(res))
+      );
   }
 }

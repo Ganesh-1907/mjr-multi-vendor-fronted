@@ -29,16 +29,19 @@ export const routes: Routes = [
   },
   {
     path: 'customer',
+    canActivate: [roleGuard(['customer'])],
     loadComponent: () => import('./layouts/dashboard-layout/dashboard-layout.component').then(m => m.DashboardLayoutComponent),
     loadChildren: () => import('./features/customer/customer.routes').then(m => m.CUSTOMER_ROUTES)
   },
   {
     path: 'vendor',
+    canActivate: [roleGuard(['vendor'])],
     loadComponent: () => import('./layouts/dashboard-layout/dashboard-layout.component').then(m => m.DashboardLayoutComponent),
     loadChildren: () => import('./features/vendor/vendor.routes').then(m => m.VENDOR_ROUTES)
   },
   {
     path: 'admin',
+    canActivate: [roleGuard(['admin'])],
     loadComponent: () => import('./layouts/dashboard-layout/dashboard-layout.component').then(m => m.DashboardLayoutComponent),
     loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
   },
